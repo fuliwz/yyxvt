@@ -1,4 +1,4 @@
-const ORIGIN = 'https://www.hlzy.store'
+const ORIGIN = 'https://bt4.cc'
 const UPSTREAM_PREFIX = '/api.php/provide/vod'
 const CACHE_CONTROL = 'public, s-maxage=60, max-age=15, stale-while-revalidate=120'
 
