@@ -13,6 +13,9 @@
 </template>
 <script setup>
 import { computed, ref } from 'vue'
-const props=defineProps({item:{type:Object,required:true}});const failed=ref(false);const fallback='/fallback.jpg';const cover=computed(()=>failed.value?fallback:props.item?.poster||fallback)
+const props=defineProps({item:{type:Object,required:true}})
+const failed=ref(false)
+const fallback='/fallback.svg'
+const cover=computed(()=>failed.value?fallback:props.item?.poster||fallback)
 function formatViews(v){const n=Number(v)||0;return n>999999?`${(n/1000000).toFixed(1)}M`:n>999?`${(n/1000).toFixed(1)}K`:String(n)}
 </script>
