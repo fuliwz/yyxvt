@@ -9,6 +9,7 @@ import Play from './views/Play.vue'
 import History from './views/History.vue'
 import './styles.css'
 import './xtv-pages.css'
+import './video-grid.css'
 
 const router = createRouter({
   history: createWebHistory(),
