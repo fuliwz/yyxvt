@@ -28,7 +28,6 @@
 import { onMounted, ref } from 'vue'
 import { getClasses, getLatestVideos, getHotVideos } from '../api/vod'
 import { useRouter } from 'vue-router'
-import { getCategoryVideos } from '../api/vod'
 const router=useRouter(); const tabs=[{key:'latest',label:'最新'},{key:'hot',label:'热门'},{key:'popular',label:'最受欢迎'},{key:'long',label:'长的'},{key:'comments',label:'评论的'},{key:'tags',label:'在标签'}]; const activeTab=ref('latest'); const videos=ref([]); const popular=ref([]); const classes=ref([]); const loading=ref(true); const fallback='https://images.unsplash.com/photo-1485846234645-a62644f84728?auto=format&fit=crop&w=900&q=75'; const tags=['最新','热门','高清','电影','电视剧','动漫','综艺','动作','喜剧','科幻','剧情','经典','推荐','高分','年度']
 function fallbackImage(e){e.target.src=fallback} function open(id){if(id)router.push(`/detail/${id}`)} function formatViews(v){const n=Number(v)||0;return n>999999?`${(n/1000000).toFixed(1)}M`:n>999?`${(n/1000).toFixed(1)}K`:String(n)}
 async function load(){loading.value=true;try{const [main,hot]=await Promise.all([activeTab.value==='latest'?getLatestVideos(1,20):getHotVideos(1,20),getHotVideos(1,20)]);videos.value=main.list;popular.value=hot.list}catch{videos.value=[];popular.value=[]}finally{loading.value=false}}
