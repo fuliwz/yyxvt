@@ -13,6 +13,7 @@ const router = createRouter({
   history: createWebHistory(),
   routes: [
     { path: '/', component: Home },
+    { path: '/categories', component: Category },
     { path: '/category/:id', component: Category },
     { path: '/search', component: Search },
     { path: '/detail/:id', component: Detail },
