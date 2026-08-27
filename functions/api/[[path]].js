@@ -1,6 +1,18 @@
 const ORIGIN = 'https://www.hlzy.store'
+const CACHE_CONTROL = 'public, s-maxage=60, max-age=15, stale-while-revalidate=120'
+
+function corsHeaders() {
+  return {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET,HEAD,OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Accept'
+  }
+}
 
 export async function onRequest(context) {
+  const method = context.request.method.toUpperCase()
+  if (method === 'OPTIONS') return new Response(null, { status: 204, headers: corsHeaders() })
+
   const incoming = new URL(context.request.url)
   const upstreamPath = incoming.pathname.replace(/^\/api/, '') || '/'
   const target = new URL(upstreamPath, ORIGIN)
@@ -11,21 +23,22 @@ export async function onRequest(context) {
   headers.delete('Host')
   headers.delete('Origin')
   headers.delete('Referer')
+  headers.delete('Cookie')
 
   try {
     const response = await fetch(new Request(target.toString(), {
-      method: context.request.method,
+      method,
       headers,
-      body: ['GET', 'HEAD'].includes(context.request.method) ? undefined : context.request.body,
+      body: ['GET', 'HEAD'].includes(method) ? undefined : context.request.body,
       redirect: 'follow'
     }))
     const out = new Headers(response.headers)
-    out.set('Access-Control-Allow-Origin', '*')
-    out.set('Access-Control-Allow-Methods', 'GET,HEAD,OPTIONS')
-    out.set('Cache-Control', 'public, s-maxage=60, max-age=15, stale-while-revalidate=120')
+    for (const [key, value] of Object.entries(corsHeaders())) out.set(key, value)
+    if (method === 'GET' || method === 'HEAD') out.set('Cache-Control', CACHE_CONTROL)
+    else out.set('Cache-Control', 'no-store')
     out.delete('set-cookie')
     return new Response(response.body, { status: response.status, headers: out })
-  } catch (error) {
-    return Response.json({ code: -1, msg: '上游 API 暂时不可用' }, { status: 502 })
+  } catch {
+    return Response.json({ code: -1, msg: '上游 API 暂时不可用' }, { status: 502, headers: corsHeaders() })
   }
 }
