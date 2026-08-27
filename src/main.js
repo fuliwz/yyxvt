@@ -6,6 +6,7 @@ import Category from './views/Category.vue'
 import Search from './views/Search.vue'
 import Detail from './views/Detail.vue'
 import Play from './views/Play.vue'
+import History from './views/History.vue'
 import './styles.css'
 import './xtv-pages.css'
 
@@ -18,6 +19,7 @@ const router = createRouter({
     { path: '/search', component: Search },
     { path: '/detail/:id', component: Detail },
     { path: '/play/:id', component: Play },
+    { path: '/history', component: History },
     { path: '/latest', component: Category, props: { latest: true } },
     { path: '/popular', component: Category, props: { popular: true } },
     { path: '/trending', component: Category, props: { popular: true } },
