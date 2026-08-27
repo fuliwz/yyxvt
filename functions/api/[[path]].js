@@ -1,4 +1,4 @@
-const ORIGIN = 'https://bt4.cc'
+const ORIGIN = 'https://191.985av.top'
 const UPSTREAM_PREFIX = '/api.php/provide/vod'
 const CACHE_CONTROL = 'public, s-maxage=60, max-age=15, stale-while-revalidate=120'
 
