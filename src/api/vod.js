@@ -29,6 +29,7 @@ export function normalizeVod(v = {}) {
     remarks: v.vod_remarks || v.vod_blurb || '',
     duration: v.vod_duration || '',
     views: v.vod_hits || v.vod_hits_day || 0,
+    updateTime: v.vod_time || '',
     actor: v.vod_actor || '',
     director: v.vod_director || '',
     content: v.vod_content || v.vod_blurb || '',
