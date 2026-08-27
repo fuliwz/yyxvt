@@ -14,42 +14,21 @@
         <button class="action register" type="button">注册</button>
       </div>
     </header>
-
-    <div v-if="sidebarOpen" class="sidebar-backdrop" @click="sidebarOpen = false"></div>
+    <div v-if="sidebarOpen" class="sidebar-backdrop" @click="sidebarOpen=false"></div>
     <div class="layout">
-      <aside :class="['sidebar', { open: sidebarOpen }]">
+      <aside :class="['sidebar',{open:sidebarOpen}]">
         <nav>
-          <router-link v-for="item in navItems" :key="item.label" :to="item.to" class="nav-item" active-class="active" @click="sidebarOpen = false">
-            <span class="nav-icon">{{ item.icon }}</span><span>{{ item.label }}</span>
-          </router-link>
+          <router-link v-for="item in navItems" :key="item.label" :to="item.to" class="nav-item" active-class="active" @click="sidebarOpen=false"><span class="nav-icon">{{item.icon}}</span><span>{{item.label}}</span></router-link>
         </nav>
       </aside>
       <main class="content"><router-view /></main>
     </div>
   </div>
 </template>
-
 <script setup>
 import { ref } from 'vue'
 import { useRouter } from 'vue-router'
-
-const sidebarOpen = ref(false)
-const keyword = ref('')
-const router = useRouter()
-const navItems = [
-  { icon: '⌂', label: '首页', to: '/' },
-  { icon: '◷', label: '最新', to: '/latest' },
-  { icon: '♡', label: '最受欢迎', to: '/popular' },
-  { icon: '⌁', label: '流行', to: '/trending' },
-  { icon: '▦', label: '类别', to: '/categories' },
-  { icon: '◉', label: '模型', to: '/models' },
-  { icon: '◎', label: '网站', to: '/sites' },
-  { icon: '▧', label: '相册', to: '/albums' },
-  { icon: '☷', label: '观看记录', to: '/history' },
-  { icon: '♙', label: '账户', to: '/account' }
-]
-function search () {
-  const q = keyword.value.trim()
-  if (q) router.push({ path: '/search', query: { wd: q } })
-}
+const sidebarOpen=ref(false); const keyword=ref(''); const router=useRouter()
+const navItems=[{icon:'⌂',label:'首页',to:'/'},{icon:'◷',label:'最新',to:'/latest'},{icon:'♡',label:'最受欢迎',to:'/popular'},{icon:'⌁',label:'流行',to:'/trending'},{icon:'▦',label:'类别',to:'/categories'},{icon:'◉',label:'模型',to:'/models'},{icon:'◎',label:'网站',to:'/sites'},{icon:'▧',label:'相册',to:'/albums'},{icon:'☷',label:'观看记录',to:'/history'},{icon:'♙',label:'账户',to:'/account'}]
+function search(){const q=keyword.value.trim();if(q)router.push({path:'/search',query:{wd:q}})}
 </script>
