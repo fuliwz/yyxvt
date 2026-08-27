@@ -38,6 +38,27 @@ export function normalizeVod(v = {}) {
   }
 }
 
+export function parsePlaySources(item) {
+  if (!item) return []
+  const names = String(item.playFrom || '').split('$$$').filter(Boolean)
+  const rawSources = String(item.playUrl || '').split('$$$').filter(Boolean)
+  const count = Math.max(names.length, rawSources.length)
+  const sources = []
+
+  for (let i = 0; i < count; i += 1) {
+    const raw = rawSources[i] || ''
+    const name = names[i] || `线路 ${i + 1}`
+    const episodes = raw.split('#').map(entry => entry.trim()).filter(Boolean).map((entry, index) => {
+      const parts = entry.split('$')
+      const label = parts.length > 1 ? parts[0].trim() : `第${String(index + 1).padStart(2, '0')}集`
+      const url = (parts.length > 1 ? parts.slice(1).join('$') : parts[0]).trim()
+      return { label, url }
+    }).filter(ep => /^https?:\/\//i.test(ep.url))
+    if (episodes.length) sources.push({ name, episodes })
+  }
+  return sources
+}
+
 async function request(path, params = {}) {
   const k = cacheKey(path, params)
   const cached = cache.get(k)
@@ -58,17 +79,13 @@ const endpoint = '/api.php/provide/vod/'
 
 export async function getClasses() {
   const result = await request(endpoint, { ac: 'list', pg: 1, pagesize: 100 })
-  return result.data?.class || []
+  return Array.isArray(result.data?.class) ? result.data.class : []
 }
 
 export async function getVideos({ page = 1, limit = 18, typeId, keyword, sort } = {}) {
   const result = await request(endpoint, {
-    ac: 'detail',
-    pg: Math.max(1, Number(page) || 1),
-    limit,
-    t: typeId,
-    wd: keyword?.trim(),
-    sort
+    ac: 'detail', pg: Math.max(1, Number(page) || 1), limit,
+    t: typeId, wd: keyword?.trim(), sort
   })
   return {
     list: Array.isArray(result.data?.list) ? result.data.list.map(normalizeVod) : [],
