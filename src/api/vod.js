@@ -4,6 +4,7 @@ const api = axios.create({ baseURL: '/api', timeout: 12000, maxContentLength: 8 
 const cache = new Map()
 const pending = new Map()
 const TTL = 60_000
+const DEFAULT_LIMIT = 20
 const MAX_LIMIT = 48
 const MAX_PAGE = 100000
 const MAX_KEYWORD = 100
@@ -21,9 +22,7 @@ function safeInt(value, fallback, min, max) {
   const n = Number(value)
   return Number.isFinite(n) ? Math.min(max, Math.max(min, Math.trunc(n))) : fallback
 }
-function safeText(value, max = MAX_KEYWORD) {
-  return String(value ?? '').trim().slice(0, max)
-}
+function safeText(value, max = MAX_KEYWORD) { return String(value ?? '').trim().slice(0, max) }
 function safeId(value) {
   const id = safeText(value, 64)
   return /^[A-Za-z0-9_-]+$/.test(id) ? id : ''
@@ -31,12 +30,13 @@ function safeId(value) {
 
 export function normalizeVod(v = {}) {
   return {
-    id: v.vod_id, title: v.vod_name || '未命名内容', poster: v.vod_pic || v.vod_pic_thumb || v.vod_pic_slide || '',
+    id: v.vod_id,
+    title: v.vod_name || '未命名内容',
+    poster: v.vod_pic || v.vod_pic_thumb || v.vod_pic_slide || '',
     year: v.vod_year || '', area: v.vod_area || '', typeId: v.type_id || '', typeName: v.type_name || v.vod_class || '',
     score: v.vod_score || '', remarks: v.vod_remarks || v.vod_blurb || '', duration: v.vod_duration || '',
-    views: v.vod_hits || v.vod_hits_day || 0, updateTime: v.vod_time || '', actor: v.vod_actor || '',
-    director: v.vod_director || '', content: v.vod_content || v.vod_blurb || '', playFrom: v.vod_play_from || '',
-    playUrl: v.vod_play_url || '', raw: v
+    views: v.vod_hits || v.vod_hits_day || 0, updateTime: v.vod_time || '', actor: v.vod_actor || '', director: v.vod_director || '',
+    content: v.vod_content || v.vod_blurb || '', playFrom: v.vod_play_from || '', playUrl: v.vod_play_url || '', raw: v
   }
 }
 
@@ -76,24 +76,36 @@ async function request(path, params = {}) {
 }
 
 const endpoint = '/api.php/provide/vod/'
+
 export async function getClasses() {
   const result = await request(endpoint, { ac: 'list', pg: 1, pagesize: 100 })
   return Array.isArray(result.data?.class) ? result.data.class.slice(0, 100) : []
 }
-export async function getVideos({ page = 1, limit = 18, typeId, keyword, sort } = {}) {
+
+export async function getVideos({ page = 1, limit = DEFAULT_LIMIT, typeId, keyword, sort } = {}) {
   const pg = safeInt(page, 1, 1, MAX_PAGE)
-  const size = safeInt(limit, 18, 1, MAX_LIMIT)
+  const size = safeInt(limit, DEFAULT_LIMIT, 1, MAX_LIMIT)
   const type = safeText(typeId, 32)
   const wd = safeText(keyword, MAX_KEYWORD)
   const order = ['hits', 'time', 'score'].includes(String(sort)) ? String(sort) : ''
   const result = await request(endpoint, { ac: 'detail', pg, limit: size, t: type, wd, sort: order })
-  const list = Array.isArray(result.data?.list) ? result.data.list.slice(0, MAX_LIMIT).map(normalizeVod) : []
-  return { list, page: safeInt(result.data?.page, pg, 1, MAX_PAGE), pageCount: safeInt(result.data?.pagecount || result.data?.page_count, 1, 1, MAX_PAGE), total: safeInt(result.data?.total, 0, 0, Number.MAX_SAFE_INTEGER) }
+  const upstreamList = Array.isArray(result.data?.list) ? result.data.list : []
+  const list = upstreamList.slice(0, size).map(normalizeVod)
+  const rawPageCount = result.data?.pagecount ?? result.data?.page_count
+  const rawTotal = result.data?.total
+  return {
+    list,
+    page: safeInt(result.data?.page, pg, 1, MAX_PAGE),
+    pageCount: safeInt(rawPageCount, list.length ? pg : 1, 0, MAX_PAGE),
+    total: safeInt(rawTotal, 0, 0, Number.MAX_SAFE_INTEGER)
+  }
 }
-export const getLatestVideos = (page = 1, limit = 18) => getVideos({ page, limit })
-export const getHotVideos = (page = 1, limit = 18) => getVideos({ page, limit, sort: 'hits' })
-export const getCategoryVideos = (typeId, page = 1, limit = 18) => getVideos({ typeId, page, limit })
-export const searchVideos = (keyword, page = 1, limit = 18) => getVideos({ keyword, page, limit })
+
+export const getLatestVideos = (page = 1, limit = DEFAULT_LIMIT) => getVideos({ page, limit })
+export const getHotVideos = (page = 1, limit = DEFAULT_LIMIT) => getVideos({ page, limit, sort: 'hits' })
+export const getCategoryVideos = (typeId, page = 1, limit = DEFAULT_LIMIT) => getVideos({ typeId, page, limit })
+export const searchVideos = (keyword, page = 1, limit = DEFAULT_LIMIT) => getVideos({ keyword, page, limit })
+
 export async function getDetail(id) {
   const safe = safeId(id)
   if (!safe) return null
@@ -101,6 +113,7 @@ export async function getDetail(id) {
   const item = Array.isArray(result.data?.list) ? result.data.list[0] : null
   return item ? normalizeVod(item) : null
 }
+
 export async function getRelatedVideos(item, limit = 12) {
   if (!item) return []
   const size = safeInt(limit, 12, 1, 20)
@@ -109,8 +122,11 @@ export async function getRelatedVideos(item, limit = 12) {
   if (list.length < size) {
     const hot = await getHotVideos(1, size + 4).catch(() => ({ list: [] }))
     const seen = new Set(list.map(v => String(v.id)))
-    for (const v of hot.list) if (String(v.id) !== String(item.id) && !seen.has(String(v.id))) { list.push(v); seen.add(String(v.id)) }
+    for (const v of hot.list) {
+      if (String(v.id) !== String(item.id) && !seen.has(String(v.id))) { list.push(v); seen.add(String(v.id)) }
+    }
   }
   return list.slice(0, size)
 }
+
 export const clearCache = () => { cache.clear(); pending.clear() }
