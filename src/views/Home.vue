@@ -1,9 +1,9 @@
 <template>
   <section class="home">
     <section class="section popular-section">
-      <div class="section-head"><h2>流行于</h2><div class="carousel-arrows"><button @click="scrollRow(popularRow,-1)">‹</button><button @click="scrollRow(popularRow,1)">›</button></div></div>
-      <div ref="popularRow" class="video-row">
-        <article v-for="item in popular" :key="item.id" class="mini-card" @click="open(item.id)"><div class="thumb"><img :src="item.poster || fallback" :alt="item.title" loading="lazy" @error="fallbackImage"><span class="badge">{{ item.updateTime || item.raw?.vod_time || '' }}</span><span class="duration">{{ item.duration || 'HD' }}</span><div class="thumb-meta"><span>◉ {{ formatViews(item.views) }}</span><span>{{ item.year || '' }}</span></div></div><h3 class="mini-title">{{ item.title }}</h3></article>
+      <div class="section-head"><h2>流行于</h2><router-link class="see-all" to="/popular">查看全部</router-link></div>
+      <div class="video-grid popular-grid">
+        <article v-for="item in popular" :key="item.id" class="video-card" @click="open(item.id)"><div class="thumb"><img :src="item.poster || fallback" :alt="item.title" loading="lazy" @error="fallbackImage"><span class="badge">{{ item.updateTime || item.raw?.vod_time || '' }}</span><span class="duration">{{ item.duration || 'HD' }}</span><button class="play" aria-label="打开">▶</button></div><h3>{{item.title}}</h3><div class="stats"><span>◉ {{formatViews(item.views)}}</span><span class="score">★ {{item.score || '—'}}</span></div></article>
       </div>
     </section>
 
@@ -28,8 +28,9 @@
 import { onMounted, ref } from 'vue'
 import { getClasses, getLatestVideos, getHotVideos } from '../api/vod'
 import { useRouter } from 'vue-router'
-const router=useRouter(); const tabs=[{key:'latest',label:'最新'},{key:'hot',label:'热门'},{key:'popular',label:'最受欢迎'},{key:'long',label:'长的'},{key:'comments',label:'评论的'},{key:'tags',label:'在标签'}]; const activeTab=ref('latest'); const videos=ref([]); const popular=ref([]); const classes=ref([]); const loading=ref(true); const popularRow=ref(null); const fallback='https://images.unsplash.com/photo-1485846234645-a62644f84728?auto=format&fit=crop&w=900&q=75'; const tags=['最新','热门','高清','电影','电视剧','动漫','综艺','动作','喜剧','科幻','剧情','经典','推荐','高分','年度']
-function fallbackImage(e){e.target.src=fallback} function open(id){if(id)router.push(`/detail/${id}`)} function scrollRow(el,d){el?.scrollBy({left:d*520,behavior:'smooth'})} function formatViews(v){const n=Number(v)||0;return n>999999?`${(n/1000000).toFixed(1)}M`:n>999?`${(n/1000).toFixed(1)}K`:String(n)}
-async function load(){loading.value=true;try{const [main,hot]=await Promise.all([activeTab.value==='latest'?getLatestVideos(1,20):getHotVideos(1,20),getHotVideos(1,8)]);videos.value=main.list;popular.value=hot.list}catch{videos.value=[];popular.value=[]}finally{loading.value=false}}
+import { getCategoryVideos } from '../api/vod'
+const router=useRouter(); const tabs=[{key:'latest',label:'最新'},{key:'hot',label:'热门'},{key:'popular',label:'最受欢迎'},{key:'long',label:'长的'},{key:'comments',label:'评论的'},{key:'tags',label:'在标签'}]; const activeTab=ref('latest'); const videos=ref([]); const popular=ref([]); const classes=ref([]); const loading=ref(true); const fallback='https://images.unsplash.com/photo-1485846234645-a62644f84728?auto=format&fit=crop&w=900&q=75'; const tags=['最新','热门','高清','电影','电视剧','动漫','综艺','动作','喜剧','科幻','剧情','经典','推荐','高分','年度']
+function fallbackImage(e){e.target.src=fallback} function open(id){if(id)router.push(`/detail/${id}`)} function formatViews(v){const n=Number(v)||0;return n>999999?`${(n/1000000).toFixed(1)}M`:n>999?`${(n/1000).toFixed(1)}K`:String(n)}
+async function load(){loading.value=true;try{const [main,hot]=await Promise.all([activeTab.value==='latest'?getLatestVideos(1,20):getHotVideos(1,20),getHotVideos(1,20)]);videos.value=main.list;popular.value=hot.list}catch{videos.value=[];popular.value=[]}finally{loading.value=false}}
 async function changeTab(key){activeTab.value=key;await load()} onMounted(async()=>{classes.value=await getClasses().catch(()=>[]);await load()})
 </script>
