@@ -45,7 +45,7 @@ const navItems = [
   { icon: '◉', label: '模型', to: '/models' },
   { icon: '◎', label: '网站', to: '/sites' },
   { icon: '▧', label: '相册', to: '/albums' },
-  { icon: '☷', label: '播放列表', to: '/playlists' },
+  { icon: '☷', label: '观看记录', to: '/history' },
   { icon: '♙', label: '账户', to: '/account' }
 ]
 function search () {
