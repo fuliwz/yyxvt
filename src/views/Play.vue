@@ -3,8 +3,8 @@
     <div v-if="loading" class="player-shell skeleton"></div>
     <template v-else-if="item">
       <div class="player-shell">
-        <video v-if="isDirectMedia" class="media-player" :src="activeEpisode?.url" controls playsinline preload="metadata" poster="" @error="playerError = '当前地址不是浏览器可直接播放的媒体文件'" />
-        <iframe v-else-if="activeEpisode" class="media-player" :src="activeEpisode.url" title="播放器" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen referrerpolicy="no-referrer" @error="playerError = '播放页面加载失败'" />
+        <video v-if="isDirectMedia" class="media-player" :src="activeEpisode?.url" controls playsinline preload="metadata" @error="playerError = '当前地址不是浏览器可直接播放的媒体文件'" />
+        <iframe v-else-if="activeEpisode" class="media-player" :src="activeEpisode.url" title="播放器" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen referrerpolicy="no-referrer" />
         <div v-else class="player-placeholder"><span>▶</span><small>请选择播放线路和选集</small></div>
       </div>
 
@@ -36,9 +36,10 @@
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { getDetail, parsePlaySources } from '../api/vod'
+import { saveHistory } from '../utils/history'
 
 const route = useRoute()
 const item = ref(null)
@@ -52,15 +53,22 @@ const activeSource = computed(() => sources.value[activeSourceIndex.value] || nu
 const activeEpisode = computed(() => activeSource.value?.episodes[activeEpisodeIndex.value] || null)
 const isDirectMedia = computed(() => /\.(mp4|webm|ogg|m3u8)(?:\?|$)/i.test(activeEpisode.value?.url || ''))
 
+function saveCurrent() {
+  if (item.value && activeEpisode.value) saveHistory(item.value, activeEpisode.value)
+}
 function selectSource(index) {
   activeSourceIndex.value = index
   activeEpisodeIndex.value = 0
   playerError.value = ''
+  saveCurrent()
 }
 function selectEpisode(index) {
   activeEpisodeIndex.value = index
   playerError.value = ''
+  saveCurrent()
 }
+
+watch(activeEpisode, saveCurrent)
 
 onMounted(async () => {
   try { item.value = await getDetail(route.params.id) } finally { loading.value = false }
