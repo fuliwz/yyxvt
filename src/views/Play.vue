@@ -15,14 +15,12 @@
 <script setup>
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import Plyr from 'plyr'
-import Hls from 'hls.js'
 import { getDetail, getRelatedVideos, parsePlaySources } from '../api/vod'
 import { saveHistory } from '../utils/history'
 import VideoCard from '../components/VideoCard.vue'
 import site from '../config/site.js'
 
-const route=useRoute();const item=ref(null);const loading=ref(true);const playerError=ref('');const videoEl=ref(null);const player=ref(null);const hls=ref(null);const recommendations=ref([]);const activeSourceIndex=ref(0);const activeEpisodeIndex=ref(0);const fallback='/fallback.svg';let loadToken=0
+const route=useRoute();const item=ref(null);const loading=ref(true);const playerError=ref('');const videoEl=ref(null);const player=ref(null);const hls=ref(null);const recommendations=ref([]);const activeSourceIndex=ref(0);const activeEpisodeIndex=ref(0);const fallback='/fallback.svg';let loadToken=0;let PlyrClass=null;let HlsClass=null;let playerLibrariesPromise=null
 const sources=computed(()=>parsePlaySources(item.value));const activeSource=computed(()=>sources.value[activeSourceIndex.value]||null);const activeEpisode=computed(()=>activeSource.value?.episodes[activeEpisodeIndex.value]||null)
 function formatViews(v){const n=Number(v)||0;return n>999999?`${(n/1000000).toFixed(1)}M`:n>999?`${(n/1000).toFixed(1)}K`:String(n)}
 function saveCurrent(){if(item.value&&activeEpisode.value)saveHistory(item.value,activeEpisode.value)}
@@ -30,8 +28,18 @@ function selectSource(i){if(i<0||i>=sources.value.length)return;activeSourceInde
 function selectEpisode(i){if(!activeSource.value||i<0||i>=activeSource.value.episodes.length)return;activeEpisodeIndex.value=i;playerError.value=''}
 function onPlayerError(){playerError.value='当前媒体地址无法播放，请切换线路或选集'}
 function destroyHls(){if(hls.value){hls.value.destroy();hls.value=null}}
-async function setMedia(){await nextTick();if(!player.value||!videoEl.value||!activeEpisode.value)return;destroyHls();const video=videoEl.value,url=activeEpisode.value.url;playerError.value='';player.value.stop();const isHls=/\.m3u8(?:$|\?)/i.test(url);if(isHls&&Hls.isSupported()){const instance=new Hls({enableWorker:true,lowLatencyMode:false,backBufferLength:60,capLevelToPlayerSize:true,manifestLoadingMaxRetry:2,levelLoadingMaxRetry:2,fragLoadingMaxRetry:3});hls.value=instance;instance.on(Hls.Events.MANIFEST_PARSED,()=>{if(hls.value===instance)player.value?.play().catch(()=>{})});instance.on(Hls.Events.ERROR,(_e,data)=>{if(hls.value!==instance||!data?.fatal)return;if(data.type===Hls.ErrorTypes.NETWORK_ERROR)instance.startLoad();else if(data.type===Hls.ErrorTypes.MEDIA_ERROR)instance.recoverMediaError();else onPlayerError()});instance.loadSource(url);instance.attachMedia(video)}else if(isHls&&video.canPlayType('application/vnd.apple.mpegurl')){video.src=url;video.load();video.play().catch(()=>{})}else{player.value.source={type:'video',sources:[{src:url,type:/\.webm(?:$|\?)/i.test(url)?'video/webm':'video/mp4'}]};player.value.play().catch(()=>{})}}
+async function loadPlayerLibraries(){
+  if(!playerLibrariesPromise){
+    playerLibrariesPromise=Promise.all([import('plyr'),import('hls.js')]).then(([plyrModule,hlsModule])=>{
+      PlyrClass=plyrModule.default||plyrModule
+      HlsClass=hlsModule.default||hlsModule
+      return true
+    }).catch(error=>{playerLibrariesPromise=null;throw error})
+  }
+  return playerLibrariesPromise
+}
+async function setMedia(){await nextTick();if(!player.value||!videoEl.value||!activeEpisode.value)return;destroyHls();const video=videoEl.value,url=activeEpisode.value.url;playerError.value='';player.value.stop();const isHls=/\.m3u8(?:$|\?)/i.test(url);if(isHls){try{await loadPlayerLibraries()}catch{onPlayerError();return}if(!HlsClass||!PlyrClass)return;if(HlsClass.isSupported()){const instance=new HlsClass({enableWorker:true,lowLatencyMode:false,backBufferLength:60,capLevelToPlayerSize:true,manifestLoadingMaxRetry:2,levelLoadingMaxRetry:2,fragLoadingMaxRetry:3});hls.value=instance;instance.on(HlsClass.Events.MANIFEST_PARSED,()=>{if(hls.value===instance)player.value?.play().catch(()=>{})});instance.on(HlsClass.Events.ERROR,(_e,data)=>{if(hls.value!==instance||!data?.fatal)return;if(data.type===HlsClass.ErrorTypes.NETWORK_ERROR)instance.startLoad();else if(data.type===HlsClass.ErrorTypes.MEDIA_ERROR)instance.recoverMediaError();else onPlayerError()});instance.loadSource(url);instance.attachMedia(video)}else if(video.canPlayType('application/vnd.apple.mpegurl')){video.src=url;video.load();video.play().catch(()=>{})}else onPlayerError()}else{try{await loadPlayerLibraries()}catch{onPlayerError();return}if(!PlyrClass)return;player.value.source={type:'video',sources:[{src:url,type:/\.webm(?:$|\?)/i.test(url)?'video/webm':'video/mp4'}]};player.value.play().catch(()=>{})}}
 async function sharePage(){try{if(navigator.share)await navigator.share({title:item.value?.title||document.title,url:location.href});else if(navigator.clipboard?.writeText){await navigator.clipboard.writeText(location.href);alert('播放页链接已复制')}}catch(_){} }
-async function loadData(){const token=++loadToken;destroyHls();player.value?.destroy();player.value=null;item.value=null;recommendations.value=[];activeSourceIndex.value=0;activeEpisodeIndex.value=0;playerError.value='';loading.value=true;const id=route.params.id;const nextItem=await getDetail(id).catch(()=>null);if(token!==loadToken)return;if(!nextItem){loading.value=false;return}item.value=nextItem;recommendations.value=await getRelatedVideos(nextItem,20).catch(()=>[]);if(token!==loadToken)return;loading.value=false;await nextTick();if(token!==loadToken||!videoEl.value)return;player.value=new Plyr(videoEl.value,{controls:['play-large','play','progress','current-time','mute','volume','settings','pip','fullscreen'],settings:['speed'],seekTime:10,tooltips:{controls:true,seek:true},keyboard:{focused:true,global:true},ratio:'16:9'});if(activeEpisode.value)await setMedia();document.title=`${nextItem.title||'播放'} - ${site.name}`}
+async function loadData(){const token=++loadToken;destroyHls();player.value?.destroy();player.value=null;item.value=null;recommendations.value=[];activeSourceIndex.value=0;activeEpisodeIndex.value=0;playerError.value='';loading.value=true;const id=route.params.id;const nextItem=await getDetail(id).catch(()=>null);if(token!==loadToken)return;if(!nextItem){loading.value=false;return}item.value=nextItem;recommendations.value=await getRelatedVideos(nextItem,20).catch(()=>[]);if(token!==loadToken)return;loading.value=false;await nextTick();if(token!==loadToken||!videoEl.value)return;try{await loadPlayerLibraries()}catch{playerError.value='播放器组件加载失败';return}if(token!==loadToken||!videoEl.value||!PlyrClass)return;player.value=new PlyrClass(videoEl.value,{controls:['play-large','play','progress','current-time','mute','volume','settings','pip','fullscreen'],settings:['speed'],seekTime:10,tooltips:{controls:true,seek:true},keyboard:{focused:true,global:true},ratio:'16:9'});if(activeEpisode.value)await setMedia();document.title=`${nextItem.title||'播放'} - ${site.name}`}
 watch(()=>route.params.id,loadData,{immediate:true});watch(activeEpisode,async()=>{saveCurrent();await setMedia()});onBeforeUnmount(()=>{loadToken++;destroyHls();player.value?.destroy();player.value=null})
 </script>
