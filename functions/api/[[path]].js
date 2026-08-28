@@ -1,4 +1,3 @@
-const DEFAULT_ORIGIN = 'https://191.985av.top'
 const UPSTREAM_PREFIX = '/api.php/provide/vod'
 const CACHE_CONTROL = 'public, s-maxage=60, max-age=15, stale-while-revalidate=120'
 const ALLOWED_HOSTS = new Set(['acv12.top', 'www.acv12.top', 'acc118.top', 'www.acc118.top'])
@@ -41,6 +40,19 @@ function json(data, status, headers) {
   return Response.json(data, { status, headers })
 }
 
+function getApiOrigin(env) {
+  const value = String(env?.API_ORIGIN || '').trim().replace(/\/$/, '')
+  if (!value) return null
+  try {
+    const url = new URL(value)
+    if (url.protocol !== 'https:') return null
+    if (url.username || url.password || url.search || url.hash) return null
+    return url.origin
+  } catch (_) {
+    return null
+  }
+}
+
 export async function onRequest(context) {
   const method = context.request.method.toUpperCase()
   const baseHeaders = { ...corsHeaders(context.request), ...securityHeaders() }
@@ -51,6 +63,11 @@ export async function onRequest(context) {
   if (method === 'OPTIONS') return new Response(null, { status: 204, headers: baseHeaders })
   if (!['GET', 'HEAD'].includes(method)) return json({ code: 405, msg: 'Method Not Allowed' }, 405, { ...baseHeaders, Allow: 'GET, HEAD, OPTIONS' })
 
+  const upstreamOrigin = getApiOrigin(context.env)
+  if (!upstreamOrigin) {
+    return json({ code: -1, msg: 'API 未配置，请设置 API_ORIGIN' }, 500, baseHeaders)
+  }
+
   const incoming = new URL(context.request.url)
   const relativePath = incoming.pathname.replace(/^\/api(?=\/|$)/, '') || '/'
   if (relativePath !== UPSTREAM_PREFIX && !relativePath.startsWith(`${UPSTREAM_PREFIX}/`)) {
@@ -58,13 +75,12 @@ export async function onRequest(context) {
   }
   if (incoming.search.length > 2048) return json({ code: 414, msg: 'Request URI Too Long' }, 414, baseHeaders)
 
-  const originFromEnv = context.env?.API_ORIGIN || DEFAULT_ORIGIN
   let target
   try {
-    target = new URL(relativePath, originFromEnv)
+    target = new URL(relativePath, upstreamOrigin)
     target.search = incoming.search
   } catch (_) {
-    return json({ code: 500, msg: 'API configuration error' }, 500, baseHeaders)
+    return json({ code: -1, msg: 'API configuration error' }, 500, baseHeaders)
   }
 
   const headers = new Headers({ Accept: 'application/json, text/plain, */*' })
