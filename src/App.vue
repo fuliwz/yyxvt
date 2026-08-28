@@ -11,7 +11,7 @@
       <aside :class="['sidebar',{open:sidebarOpen}]">
         <nav class="sidebar-nav" aria-label="网站导航">
           <router-link v-for="item in primaryNav" :key="item.label" :to="item.to" class="nav-item" active-class="active" @click="closeMobileSidebar"><span class="nav-icon">{{item.icon}}</span><span class="nav-label">{{item.label}}</span></router-link>
-          <router-link v-for="item in categories" :key="item.type_id" :to="`/category/${item.type_id}`" class="nav-item category-item" active-class="active" @click="closeMobileSidebar"><span class="nav-icon">▸</span><span class="nav-label">{{item.type_name}}</span></router-link>
+          <router-link v-for="item in categories" :key="item.type_id" :to="`/category/${item.type_id}`" class="nav-item category-item" active-class="active" @click="closeMobileSidebar"><span class="nav-icon">🎥</span><span class="nav-label">{{item.type_name}}</span></router-link>
         </nav>
       </aside>
       <main class="content"><router-view /></main>
