@@ -1,6 +1,10 @@
 /*
+  Site security headers. The parent-level _headers file is the canonical
+  Cloudflare Pages header config; keep this copy aligned for static assets.
+  This allows the configured analytics/ad script hosts without opening script-src broadly.
+*/
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
   X-Frame-Options: SAMEORIGIN
   Permissions-Policy: camera=(), microphone=(), geolocation=()
-  Content-Security-Policy: default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; media-src 'self' blob: https:; connect-src 'self' https:; font-src 'self' data: https:; frame-src 'self' https:
+  Content-Security-Policy: default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'self'; script-src 'self' https://cmp-2020.ios81x.top https://s10.histats.com; script-src-elem 'self' https://cmp-2020.ios81x.top https://s10.histats.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https:; font-src 'self' data: https:; frame-src 'self' https:
