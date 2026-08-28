@@ -3,9 +3,7 @@
     <div class="links-inner">
       <div class="links-title"><span>↗</span> 友情链接</div>
       <div class="links-list">
-        <a v-for="item in links" :key="item.url" :href="item.url" target="_blank" rel="noopener noreferrer" class="link-item">
-          {{ item.name }}
-        </a>
+        <a v-for="([name, url], index) in links" :key="`${name}-${index}`" :href="url" target="_blank" rel="noopener noreferrer" class="link-item">{{ name }}</a>
       </div>
     </div>
   </section>
@@ -28,15 +26,16 @@ function normalizeHost(value) {
 function resolveLinks() {
   const host = normalizeHost(window.location.hostname)
   const exactKey = Object.keys(friendlyLinks).find((key) => normalizeHost(key) === host)
-  if (exactKey) return friendlyLinks[exactKey] || []
+  if (exactKey) return Array.isArray(friendlyLinks[exactKey]) ? friendlyLinks[exactKey] : []
 
-  const previewKey = Object.keys(friendlyLinks).find((key) => key === '*.yyxvt.pages.dev')
-  if (host.endsWith('.yyxvt.pages.dev') && previewKey) return friendlyLinks[previewKey] || []
+  if (host.endsWith('.yyxvt.pages.dev')) {
+    return Array.isArray(friendlyLinks['*.yyxvt.pages.dev']) ? friendlyLinks['*.yyxvt.pages.dev'] : []
+  }
 
   return []
 }
 
-const links = computed(() => resolveLinks())
+const links = computed(resolveLinks)
 </script>
 
 <style scoped>
