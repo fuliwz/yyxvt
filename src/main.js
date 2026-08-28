@@ -1,16 +1,17 @@
 import { createApp } from 'vue'
 import { createRouter, createWebHistory } from 'vue-router'
 import App from './App.vue'
-import Home from './views/Home.vue'
-import Category from './views/Category.vue'
-import Search from './views/Search.vue'
-import Play from './views/Play.vue'
-import History from './views/History.vue'
-import NotFound from './views/NotFound.vue'
 import site from './config/site.js'
 import './styles.css'
 import './xtv-pages.css'
 import './video-grid.css'
+
+const Home = () => import('./views/Home.vue')
+const Category = () => import('./views/Category.vue')
+const Search = () => import('./views/Search.vue')
+const Play = () => import('./views/Play.vue')
+const History = () => import('./views/History.vue')
+const NotFound = () => import('./views/NotFound.vue')
 
 document.title = site.title
 const description = document.querySelector('meta[name="description"]')
