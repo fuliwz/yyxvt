@@ -9,7 +9,7 @@
     <div v-if="sidebarOpen" class="sidebar-backdrop" @click="closeMobileSidebar"></div>
     <div class="layout">
       <aside :class="['sidebar',{open:sidebarOpen}]">
-        <nav>
+        <nav class="sidebar-nav">
           <router-link v-for="item in primaryNav" :key="item.label" :to="item.to" class="nav-item" active-class="active" @click="closeMobileSidebar"><span class="nav-icon">{{item.icon}}</span><span class="nav-label">{{item.label}}</span></router-link>
           <div class="nav-section-title"><span>视频分类</span></div>
           <router-link v-for="item in categories" :key="item.type_id" :to="`/category/${item.type_id}`" class="nav-item category-item" active-class="active" @click="closeMobileSidebar"><span class="nav-icon">▸</span><span class="nav-label">{{item.type_name}}</span></router-link>
@@ -28,7 +28,7 @@ const sidebarOpen=ref(false)
 const sidebarCollapsed=ref(false)
 const keyword=ref('')
 const router=useRouter()
-const primaryNav=[{icon:'◷',label:'最新',to:'/latest'},{icon:'♡',label:'最受欢迎',to:'/popular'}]
+const primaryNav=[{icon:'⌂',label:'首页',to:'/'},{icon:'◷',label:'最新',to:'/latest'},{icon:'♡',label:'最受欢迎',to:'/popular'}]
 function isMobile(){return window.innerWidth<=900}
 function toggleSidebar(){if(isMobile()) sidebarOpen.value=!sidebarOpen.value; else sidebarCollapsed.value=!sidebarCollapsed.value}
 function closeMobileSidebar(){if(isMobile()) sidebarOpen.value=false}
@@ -37,7 +37,22 @@ function onResize(){if(isMobile()){sidebarCollapsed.value=false}else{sidebarOpen
 onMounted(()=>window.addEventListener('resize',onResize)); onBeforeUnmount(()=>window.removeEventListener('resize',onResize))
 </script>
 <style>
-.nav-section-title{padding:18px 16px 8px;color:var(--muted,#8b8b8b);font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+/* Sidebar: the category list is intentionally scrollable so every local JSON category remains reachable. */
+.sidebar{overflow:hidden!important}
+.sidebar-nav{height:100%;min-height:0;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;scrollbar-width:thin;scrollbar-color:#30373d transparent;padding-right:2px}
+.sidebar-nav::-webkit-scrollbar{width:6px}
+.sidebar-nav::-webkit-scrollbar-track{background:transparent}
+.sidebar-nav::-webkit-scrollbar-thumb{background:#30373d;border-radius:8px}
+.sidebar-nav::-webkit-scrollbar-thumb:hover{background:#454d54}
+.nav-section-title{padding:18px 16px 8px;color:var(--muted,#8b8b8b);font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;position:sticky;top:0;background:#0a0e11;z-index:1}
 .category-item .nav-icon{font-size:11px;opacity:.7}
-@media (min-width:901px){.app-shell.sidebar-collapsed .sidebar{width:0!important;min-width:0!important;flex-basis:0!important;padding-left:0!important;padding-right:0!important;border-right:0!important;overflow:hidden!important}.app-shell.sidebar-collapsed .sidebar .nav-label,.app-shell.sidebar-collapsed .nav-section-title{display:none!important}.app-shell.sidebar-collapsed .content{max-width:none}}
+@media (min-width:901px){
+  .app-shell.sidebar-collapsed .sidebar{width:0!important;min-width:0!important;flex-basis:0!important;padding-left:0!important;padding-right:0!important;border-right:0!important;overflow:hidden!important}
+  .app-shell.sidebar-collapsed .sidebar .nav-label,.app-shell.sidebar-collapsed .nav-section-title{display:none!important}
+  .app-shell.sidebar-collapsed .content{max-width:none}
+}
+@media (max-width:900px){
+  .sidebar{height:100vh!important;max-height:100vh!important;overflow:hidden!important}
+  .sidebar-nav{height:100%;max-height:100%;padding-bottom:20px}
+}
 </style>
