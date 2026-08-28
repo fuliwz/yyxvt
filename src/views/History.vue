@@ -10,6 +10,6 @@ import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { clearHistory, getHistory, removeHistory } from '../utils/history'
 const router=useRouter();const items=ref(getHistory());const fallback='/fallback.svg'
-function formatTime(value){const diff=Math.max(0,Date.now()-Number(value||0));if(diff<3600000)return`${Math.max(1,Math.floor(diff/60000))}分钟前`;if(diff<86400000)return`${Math.floor(diff/3600000)}小时前`;return`${Math.floor(diff/86400000)}天前`}
+function formatTime(value){const timestamp=Number(value);if(!Number.isFinite(timestamp)||timestamp<=0)return'刚刚';const diff=Math.max(0,Date.now()-timestamp);if(diff<60000)return'刚刚';if(diff<3600000)return`${Math.floor(diff/60000)}分钟前`;if(diff<86400000)return`${Math.floor(diff/3600000)}小时前`;return`${Math.floor(diff/86400000)}天前`}
 function open(item){if(item?.id)router.push(`/play/${item.id}`)}function remove(id){removeHistory(id);items.value=getHistory()}function clear(){clearHistory();items.value=[]}function fallbackImage(event){event.target.src=fallback}
 </script>
