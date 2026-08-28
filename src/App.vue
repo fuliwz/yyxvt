@@ -7,6 +7,8 @@
       <div class="top-actions"><button class="action upload" type="button">上传</button><button class="action" type="button">中文⌄</button><button class="action muted" type="button">登录</button><button class="action register" type="button">注册</button></div>
     </header>
 
+    <!-- 全站友情链接：放在顶部导航下方，由 App 全局挂载，因此所有路由页面都会显示。 -->
+    <FriendlyLinks position="top" />
     <AdContainer slot="top" />
 
     <div v-if="sidebarOpen" class="sidebar-backdrop" @click="closeMobileSidebar"></div>
@@ -21,7 +23,6 @@
     </div>
 
     <AdContainer slot="bottom" />
-    <FriendlyLinks />
   </div>
 </template>
 <script setup>
@@ -44,7 +45,6 @@ function onResize(){if(isMobile()){sidebarCollapsed.value=false}else{sidebarOpen
 onMounted(()=>window.addEventListener('resize',onResize)); onBeforeUnmount(()=>window.removeEventListener('resize',onResize))
 </script>
 <style>
-/* The sidebar itself is a fixed-height flex column; only the navigation list scrolls. */
 .sidebar{display:flex!important;flex-direction:column!important;overflow:hidden!important}
 .sidebar-nav{flex:1 1 auto;width:100%;min-height:0;height:auto!important;max-height:none;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;scrollbar-width:thin;scrollbar-color:#30373d transparent;padding-right:2px;padding-bottom:18px}
 .sidebar-nav::-webkit-scrollbar{width:6px}
