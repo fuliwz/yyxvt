@@ -2,12 +2,29 @@
 // 每个域名对应一个二维数组：[显示名称, URL]
 const FRIENDLY_LINKS = {
   // 正式域名
-  'acv12.top': [
-    ['站点A', 'https://example.com/'],
-    ['站点B', 'https://example2.com/']
+  'xn--opl235-931i.haijav.top': [
+   ['绿色导航', 'https://韝i犇.greendh.org/驫翧y'],
+  ['柠檬导航', 'https://邬焺.nmdh18.com/p嶴q'],
+  ['花小猪导航', 'https://燚r.9qqq.cc/飽翧'],
+  ['妖涩梨导航', 'https://嗷嗷嗷嗷.yaosl1.sbs/?mark=Q1TN3T'],
+  ['娱乐青导航', 'http://819ylq.yuleqing17.cc/app/Mf4viP'],
+  ['红浪漫导航', 'http://819llm.hlmhs3.top/app/gcbfcV'],
+  ['双马尾导航', 'http://819smw.smaw3.top/app/TtgjWr'],
+  ['东方色导航', 'http://819dong.dfswh3.top/app/Af2z8v'],
+  ['冈本导航', 'http://614ben.gangben3.top/app/0BU7ve'],
+  ['荔枝导航', 'http://627lizhii.lizhidh3.top/app/tosXlA']
   ],
-  'acc118.top': [
-    ['站点C', 'https://example3.com/']
+  'xn--xn--ifia-5058c.haijav.top': [
+    ['蓝色导航', 'https://wn62.bluedh63.loan/3a49rgw'],
+  ['蓝导航', 'https://zun7a.landh83.pw/z4gjqs'],
+  ['找AV导航', 'https://uo2xsr.zavdh18.qpon/3kkh52h'],
+  ['6DD导航', 'http://6146d.5ddd6.top/app/f6nEP9'],
+  ['红颜导航', 'http://614hy.hongyan2.top/app/O18VPF'],
+  ['柳如烟导航', 'http://508lry.lrydd.top/app/psEPAJ'],
+  ['22点导航', 'http://ws10d511.ws10d1.top/app/PITIMm'],
+  ['哇嘎入口', 'http://625wgrk.wgrk2.top/app/0UDKsv'],
+  ['3838导航', 'http://62338.3838dh1.top/app/FzsCgx'],
+  ['大丈夫导航', 'http://627heping.dazf2.top/app/dN3vzo']
   ],
 
   // Cloudflare Pages 预览域名统一使用默认友情链接。
