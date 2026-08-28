@@ -8,7 +8,13 @@
     </header>
     <div v-if="sidebarOpen" class="sidebar-backdrop" @click="closeMobileSidebar"></div>
     <div class="layout">
-      <aside :class="['sidebar',{open:sidebarOpen}]"><nav><router-link v-for="item in navItems" :key="item.label" :to="item.to" class="nav-item" active-class="active" @click="closeMobileSidebar"><span class="nav-icon">{{item.icon}}</span><span class="nav-label">{{item.label}}</span></router-link></nav></aside>
+      <aside :class="['sidebar',{open:sidebarOpen}]">
+        <nav>
+          <router-link v-for="item in primaryNav" :key="item.label" :to="item.to" class="nav-item" active-class="active" @click="closeMobileSidebar"><span class="nav-icon">{{item.icon}}</span><span class="nav-label">{{item.label}}</span></router-link>
+          <div class="nav-section-title"><span>视频分类</span></div>
+          <router-link v-for="item in categories" :key="item.type_id" :to="`/category/${item.type_id}`" class="nav-item category-item" active-class="active" @click="closeMobileSidebar"><span class="nav-icon">▸</span><span class="nav-label">{{item.type_name}}</span></router-link>
+        </nav>
+      </aside>
       <main class="content"><router-view /></main>
     </div>
   </div>
@@ -16,8 +22,13 @@
 <script setup>
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
-const sidebarOpen=ref(false); const sidebarCollapsed=ref(false); const keyword=ref(''); const router=useRouter()
-const navItems=[{icon:'⌂',label:'首页',to:'/'},{icon:'◷',label:'最新',to:'/latest'},{icon:'♡',label:'最受欢迎',to:'/popular'},{icon:'⌁',label:'流行',to:'/trending'},{icon:'▦',label:'类别',to:'/categories'},{icon:'◉',label:'模型',to:'/models'},{icon:'◎',label:'网站',to:'/sites'},{icon:'▧',label:'相册',to:'/albums'},{icon:'☷',label:'观看记录',to:'/history'},{icon:'♙',label:'账户',to:'/account'}]
+import categories from './data/categories.json'
+
+const sidebarOpen=ref(false)
+const sidebarCollapsed=ref(false)
+const keyword=ref('')
+const router=useRouter()
+const primaryNav=[{icon:'◷',label:'最新',to:'/latest'},{icon:'♡',label:'最受欢迎',to:'/popular'}]
 function isMobile(){return window.innerWidth<=900}
 function toggleSidebar(){if(isMobile()) sidebarOpen.value=!sidebarOpen.value; else sidebarCollapsed.value=!sidebarCollapsed.value}
 function closeMobileSidebar(){if(isMobile()) sidebarOpen.value=false}
@@ -26,9 +37,7 @@ function onResize(){if(isMobile()){sidebarCollapsed.value=false}else{sidebarOpen
 onMounted(()=>window.addEventListener('resize',onResize)); onBeforeUnmount(()=>window.removeEventListener('resize',onResize))
 </script>
 <style>
-@media (min-width: 901px){
-  .app-shell.sidebar-collapsed .sidebar{width:0!important;min-width:0!important;flex-basis:0!important;padding-left:0!important;padding-right:0!important;border-right:0!important;overflow:hidden!important}
-  .app-shell.sidebar-collapsed .sidebar .nav-label{display:none!important}
-  .app-shell.sidebar-collapsed .content{max-width:none}
-}
+.nav-section-title{padding:18px 16px 8px;color:var(--muted,#8b8b8b);font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
+.category-item .nav-icon{font-size:11px;opacity:.7}
+@media (min-width:901px){.app-shell.sidebar-collapsed .sidebar{width:0!important;min-width:0!important;flex-basis:0!important;padding-left:0!important;padding-right:0!important;border-right:0!important;overflow:hidden!important}.app-shell.sidebar-collapsed .sidebar .nav-label,.app-shell.sidebar-collapsed .nav-section-title{display:none!important}.app-shell.sidebar-collapsed .content{max-width:none}}
 </style>
