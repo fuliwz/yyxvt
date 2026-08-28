@@ -22,5 +22,7 @@ jobs:
           cache: npm
       - name: Install dependencies
         run: npm install --no-audit --no-fund
+      - name: Security audit
+        run: npm audit --audit-level=high
       - name: Production build
         run: npm run build
