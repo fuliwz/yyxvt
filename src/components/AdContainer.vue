@@ -1,96 +1,111 @@
 <template>
   <section class="ad-container" aria-label="广告">
-    <div v-if="isMobile" ref="adMount" class="mobile-ad" aria-label="移动端广告"></div>
+    <div ref="adMount" class="mobile-ad" aria-label="移动端广告"></div>
   </section>
 </template>
 
 <script setup>
-import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
-
-const MOBILE_AD_URL = 'https://cmp-2020.ios81x.top/dh.php'
-const HISTATS_SITE = '1,4671415,4,0,0,0,00010000'
-const HISTATS_FASI = '1'
 
 const route = useRoute()
 const adMount = ref(null)
-const isMobile = ref(false)
-let mediaQuery = null
-let pageviewTimer = null
+const AD_URL = 'https://cmp-2020.ios81x.top/dh.php'
+const HISTATS_SITE = '1,4671415,4,0,0,0,00010000'
+let generation = 0
+let timer = null
+let observer = null
+let adNodes = new Set()
 
-function checkMobile() {
-  isMobile.value = !!mediaQuery && mediaQuery.matches
+function rememberNode(node) {
+  if (!(node instanceof Node)) return
+  if (adMount.value?.contains(node)) return
+  adNodes.add(node)
+  if (node.nodeType === Node.ELEMENT_NODE) node.setAttribute('data-yyxvt-ad-node', '1')
 }
 
-function removePreviousAdScripts() {
-  document.querySelectorAll('script[data-yyxvt-mobile-ad="1"]').forEach((el) => el.remove())
+function startObserver() {
+  if (typeof MutationObserver === 'undefined') return
+  observer?.disconnect()
+  observer = new MutationObserver(mutations => {
+    mutations.forEach(mutation => mutation.addedNodes.forEach(rememberNode))
+  })
+  observer.observe(document.head, { childList: true })
+  observer.observe(document.body, { childList: true })
 }
 
-async function loadMobileAd() {
+function stopObserver() {
+  observer?.disconnect()
+  observer = null
+}
+
+function clearAd() {
+  generation += 1
+  if (timer) clearTimeout(timer)
+  timer = null
+  stopObserver()
+  adMount.value?.replaceChildren()
+  document.querySelectorAll('script[data-yyxvt-ad="1"]').forEach(el => el.remove())
+  document.querySelectorAll('[data-yyxvt-ad-node="1"]').forEach(el => el.remove())
+  adNodes.forEach(node => node?.parentNode?.removeChild(node))
+  adNodes.clear()
+}
+
+async function loadAd() {
   await nextTick()
-  if (!isMobile.value || !adMount.value) return
-
-  removePreviousAdScripts()
-  adMount.value.innerHTML = ''
-
+  const target = adMount.value
+  if (!target) return
+  clearAd()
+  const currentGeneration = generation
+  startObserver()
   const script = document.createElement('script')
-  script.src = MOBILE_AD_URL + (MOBILE_AD_URL.includes('?') ? '&' : '?') + '_pv=' + Date.now()
-  script.async = true
-  script.setAttribute('data-yyxvt-mobile-ad', '1')
-  adMount.value.appendChild(script)
+  script.dataset.yyxvtAd = '1'
+  script.async = false
+  script.src = `${AD_URL}?_route=${encodeURIComponent(route.fullPath)}&_=${Date.now()}`
+  target.appendChild(script)
+  script.onerror = () => {
+    if (currentGeneration === generation) console.warn('[AdContainer] advertisement failed to load')
+  }
 }
 
 function loadHistats() {
-  window._Hasync = []
-  window._Hasync.push(['Histats.start', HISTATS_SITE])
-  window._Hasync.push(['Histats.fasi', HISTATS_FASI])
-  window._Hasync.push(['Histats.track_hits', ''])
-
   const old = document.querySelector('script[data-yyxvt-histats="1"]')
   if (old) old.remove()
+
+  window._Hasync = []
+  window._Hasync.push(['Histats.start', HISTATS_SITE])
+  window._Hasync.push(['Histats.fasi', '1'])
+  window._Hasync.push(['Histats.track_hits', ''])
 
   const script = document.createElement('script')
   script.type = 'text/javascript'
   script.async = true
-  script.src = 'https://s10.histats.com/js15_as.js?_pv=' + Date.now()
-  script.setAttribute('data-yyxvt-histats', '1')
+  script.src = `https://s10.histats.com/js15_as.js?_route=${encodeURIComponent(route.fullPath)}&_=${Date.now()}`
+  script.dataset.yyxvtHistats = '1'
   ;(document.head || document.body).appendChild(script)
 }
 
-function refreshForPage() {
-  clearTimeout(pageviewTimer)
-  pageviewTimer = window.setTimeout(() => {
-    loadMobileAd()
+function reloadPageResources() {
+  if (timer) clearTimeout(timer)
+  timer = setTimeout(() => {
+    timer = null
+    loadAd()
     loadHistats()
   }, 0)
 }
 
-onMounted(() => {
-  mediaQuery = window.matchMedia('(max-width: 640px)')
-  checkMobile()
-  if (mediaQuery.addEventListener) mediaQuery.addEventListener('change', checkMobile)
-  else mediaQuery.addListener(checkMobile)
-  refreshForPage()
-})
-
-watch(() => route.fullPath, () => {
-  refreshForPage()
-})
-
+watch(() => route.fullPath, reloadPageResources, { immediate: true })
 onBeforeUnmount(() => {
-  clearTimeout(pageviewTimer)
-  if (mediaQuery) {
-    if (mediaQuery.removeEventListener) mediaQuery.removeEventListener('change', checkMobile)
-    else mediaQuery.removeListener(checkMobile)
-  }
-  removePreviousAdScripts()
+  clearAd()
   const histats = document.querySelector('script[data-yyxvt-histats="1"]')
   if (histats) histats.remove()
 })
 </script>
 
 <style scoped>
-.ad-container{width:100%;display:flex;justify-content:center;margin:0;padding:0}
-.mobile-ad{width:100%;min-height:0;display:flex;justify-content:center;align-items:center;overflow:hidden}
-@media(min-width:641px){.mobile-ad{display:none}}
+.ad-container { width: 100%; min-height: 0; overflow: hidden; }
+.mobile-ad { width: 100%; min-height: 0; overflow: hidden; }
+@media (min-width: 641px) {
+  .ad-container { display: none; }
+}
 </style>
