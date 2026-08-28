@@ -6,9 +6,14 @@ import Category from './views/Category.vue'
 import Search from './views/Search.vue'
 import Play from './views/Play.vue'
 import History from './views/History.vue'
+import site from './config/site.js'
 import './styles.css'
 import './xtv-pages.css'
 import './video-grid.css'
+
+document.title = site.title
+const description = document.querySelector('meta[name="description"]')
+if (description) description.setAttribute('content', site.description)
 
 const router = createRouter({
   history: createWebHistory(),
@@ -22,7 +27,6 @@ const router = createRouter({
     { path: '/latest', component: Category, props: { latest: true } },
     { path: '/popular', component: Category, props: { popular: true } },
     { path: '/trending', component: Category, props: { popular: true } },
-    // Keep old detail URLs compatible, but never render the old video homepage.
     { path: '/detail/:id', redirect: to => `/play/${to.params.id}` },
     { path: '/:pathMatch(.*)*', component: Home }
   ],
