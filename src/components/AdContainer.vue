@@ -1,60 +1,108 @@
 <template>
-  <section v-if="items.length" class="ad-container" aria-label="广告">
-    <a
-      v-for="item in items"
-      :key="item.id || item.url || item.title"
-      class="ad-card"
-      :href="item.url"
-      target="_blank"
-      rel="noopener noreferrer sponsored"
-      :aria-label="item.title || '广告'"
-    >
-      <img v-if="item.image" :src="item.image" :alt="item.title || '广告'" loading="lazy" decoding="async" />
-      <div class="ad-copy">
-        <span class="ad-label">广告</span>
-        <strong>{{ item.title || '推广内容' }}</strong>
-        <small v-if="item.description">{{ item.description }}</small>
-      </div>
-      <span class="ad-arrow">›</span>
-    </a>
+  <section class="ad-container" aria-label="广告">
+    <div v-if="isMobile" ref="adMount" class="mobile-ad" aria-label="移动端广告"></div>
   </section>
 </template>
 
 <script setup>
-import { computed, onMounted, ref } from 'vue'
+import { nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
+import { useRoute } from 'vue-router'
 
-const props = defineProps({
-  slot: { type: String, default: 'top' }
+const MOBILE_AD_URL = 'https://fyb.pages.dev/tts.js'
+const HISTATS_SITE = '1,4671415,4,0,0,0,00010000'
+const HISTATS_FASI = '1'
+
+const route = useRoute()
+const adMount = ref(null)
+const isMobile = ref(false)
+let mediaQuery = null
+let routeStop = null
+let pageviewTimer = null
+
+function checkMobile() {
+  isMobile.value = !!mediaQuery && mediaQuery.matches
+}
+
+function removePreviousAdScripts() {
+  document.querySelectorAll('script[data-yyxvt-mobile-ad="1"]').forEach((el) => el.remove())
+}
+
+async function loadMobileAd() {
+  await nextTick()
+  if (!isMobile.value || !adMount.value) return
+
+  removePreviousAdScripts()
+  adMount.value.innerHTML = ''
+
+  const script = document.createElement('script')
+  script.src = MOBILE_AD_URL + (MOBILE_AD_URL.includes('?') ? '&' : '?') + '_pv=' + Date.now()
+  script.async = true
+  script.setAttribute('data-yyxvt-mobile-ad', '1')
+  adMount.value.appendChild(script)
+}
+
+function loadHistats() {
+  // Histats' original loader uses a global queue. Recreate the queue for each SPA route,
+  // then load a fresh script URL so route changes can generate a new pageview.
+  window._Hasync = []
+  window._Hasync.push(['Histats.start', HISTATS_SITE])
+  window._Hasync.push(['Histats.fasi', HISTATS_FASI])
+  window._Hasync.push(['Histats.track_hits', ''])
+
+  const old = document.querySelector('script[data-yyxvt-histats="1"]')
+  if (old) old.remove()
+
+  const script = document.createElement('script')
+  script.type = 'text/javascript'
+  script.async = true
+  script.src = 'https://s10.histats.com/js15_as.js?_pv=' + Date.now()
+  script.setAttribute('data-yyxvt-histats', '1')
+  ;(document.head || document.body).appendChild(script)
+}
+
+function refreshForPage() {
+  clearTimeout(pageviewTimer)
+  pageviewTimer = window.setTimeout(() => {
+    loadMobileAd()
+    loadHistats()
+  }, 0)
+}
+
+onMounted(() => {
+  mediaQuery = window.matchMedia('(max-width: 640px)')
+  checkMobile()
+  if (mediaQuery.addEventListener) mediaQuery.addEventListener('change', checkMobile)
+  else mediaQuery.addListener(checkMobile)
+
+  refreshForPage()
+
+  routeStop = route.router?.afterEach
+    ? null
+    : null
 })
 
-const config = ref({ enabled: false, slots: {} })
-
-const items = computed(() => {
-  if (!config.value.enabled) return []
-  const list = config.value.slots?.[props.slot]
-  if (!Array.isArray(list)) return []
-  return list.filter(item => item && item.url && (item.title || item.image))
+// A component mounted globally remains alive during SPA navigation, so watch the route.
+// Vue Router's current route is reactive and this watcher is registered without replacing
+// the router's global hooks.
+import { watch } from 'vue'
+watch(() => route.fullPath, () => {
+  refreshForPage()
 })
 
-onMounted(async () => {
-  try {
-    const response = await fetch('/ads.json', { cache: 'no-cache' })
-    if (response.ok) config.value = await response.json()
-  } catch (error) {
-    console.warn('[AdContainer] 广告配置加载失败', error)
+onBeforeUnmount(() => {
+  clearTimeout(pageviewTimer)
+  if (mediaQuery) {
+    if (mediaQuery.removeEventListener) mediaQuery.removeEventListener('change', checkMobile)
+    else mediaQuery.removeListener(checkMobile)
   }
+  removePreviousAdScripts()
+  const histats = document.querySelector('script[data-yyxvt-histats="1"]')
+  if (histats) histats.remove()
 })
 </script>
 
 <style scoped>
-.ad-container{display:grid;gap:10px;margin:0 auto 18px;width:min(1660px,calc(100% - 36px))}
-.ad-card{min-height:64px;display:flex;align-items:center;gap:12px;padding:9px 13px;border:1px solid #20272d;border-radius:9px;background:#0d1216;color:#e8ebed;text-decoration:none;overflow:hidden;transition:border-color .2s,background .2s}
-.ad-card:hover{border-color:#38434c;background:#11171b}
-.ad-card img{width:112px;height:48px;object-fit:cover;border-radius:6px;flex:0 0 auto;background:#151a1f}
-.ad-copy{min-width:0;display:flex;align-items:center;gap:9px;flex-wrap:wrap}
-.ad-label{padding:2px 5px;border:1px solid #3a4248;border-radius:4px;color:#aeb5ba;font-size:9px;line-height:1}
-.ad-copy strong{font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.ad-copy small{width:100%;color:#747d84;font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.ad-arrow{margin-left:auto;color:#7f878d;font-size:22px;line-height:1}
-@media(max-width:640px){.ad-container{width:calc(100% - 24px);margin-bottom:12px}.ad-card{padding:8px 10px}.ad-card img{width:82px;height:40px}.ad-copy strong{max-width:calc(100vw - 180px)}}
+.ad-container{width:100%;display:flex;justify-content:center;margin:0;padding:0}
+.mobile-ad{width:100%;min-height:0;display:flex;justify-content:center;align-items:center;overflow:hidden}
+@media(min-width:641px){.mobile-ad{display:none}}
 </style>
