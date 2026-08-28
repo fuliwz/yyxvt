@@ -6,6 +6,9 @@
       <form class="search-wrap" @submit.prevent="search"><input v-model="keyword" autocomplete="off" placeholder="搜索视频、类别、标签..." /><button class="search-btn" aria-label="搜索">⌕</button></form>
       <div class="top-actions"><button class="action upload" type="button">上传</button><button class="action" type="button">中文⌄</button><button class="action muted" type="button">登录</button><button class="action register" type="button">注册</button></div>
     </header>
+
+    <AdContainer slot="top" />
+
     <div v-if="sidebarOpen" class="sidebar-backdrop" @click="closeMobileSidebar"></div>
     <div class="layout">
       <aside :class="['sidebar',{open:sidebarOpen}]">
@@ -16,12 +19,17 @@
       </aside>
       <main class="content"><router-view /></main>
     </div>
+
+    <AdContainer slot="bottom" />
+    <FriendlyLinks />
   </div>
 </template>
 <script setup>
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import categories from './data/categories.json'
+import AdContainer from './components/AdContainer.vue'
+import FriendlyLinks from './components/FriendlyLinks.vue'
 
 const sidebarOpen=ref(false)
 const sidebarCollapsed=ref(false)
