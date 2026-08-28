@@ -2,7 +2,7 @@
   <div class="app-shell" :class="{ 'sidebar-collapsed': sidebarCollapsed }">
     <header class="topbar">
       <button class="icon-btn menu-btn" aria-label="菜单" @click="toggleSidebar">☰</button>
-      <router-link to="/" class="brand"><span class="brand-x">X</span>TV</router-link>
+      <router-link to="/" class="brand"><span class="brand-x">{{ site.name.charAt(0) }}</span>{{ site.name.slice(1) }}</router-link>
       <form class="search-wrap" @submit.prevent="search"><input v-model="keyword" autocomplete="off" placeholder="搜索视频、类别、标签..." /><button class="search-btn" aria-label="搜索">⌕</button></form>
       <div class="top-actions"><button class="action upload" type="button">上传</button><button class="action" type="button">中文⌄</button><button class="action muted" type="button">登录</button><button class="action register" type="button">注册</button></div>
     </header>
@@ -30,6 +30,7 @@
 import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import categories from './data/categories.json'
+import site from './config/site.js'
 import AdContainer from './components/AdContainer.vue'
 import FriendlyLinks from './components/FriendlyLinks.vue'
 
