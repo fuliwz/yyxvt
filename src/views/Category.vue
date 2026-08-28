@@ -9,17 +9,18 @@
   </section>
 </template>
 <script setup>
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { getCategoryVideos, getClasses, getHotVideos, getLatestVideos } from '../api/vod'
-const props=defineProps({latest:Boolean,popular:Boolean});const route=useRoute();const router=useRouter();const videos=ref([]);const classes=ref([]);const loading=ref(true);const page=ref(1);const pageCount=ref(1);const fallback='/fallback.svg';let requestToken=0
+import categoriesData from '../data/categories.json'
+import { getCategoryVideos, getHotVideos, getLatestVideos } from '../api/vod'
+const props=defineProps({latest:Boolean,popular:Boolean});const route=useRoute();const router=useRouter();const videos=ref([]);const classes=ref(Array.isArray(categoriesData)?categoriesData:[]);const loading=ref(true);const page=ref(1);const pageCount=ref(1);const fallback='/fallback.svg';let requestToken=0
 const title=computed(()=>props.latest?'最新':props.popular?'最受欢迎':classes.value.find(x=>String(x.type_id)===String(route.params.id))?.type_name||'类别')
 const visiblePages=computed(()=>{const out=[];const start=Math.max(1,Math.min(page.value-2,pageCount.value-4));for(let i=start;i<=Math.min(pageCount.value,start+4);i++)out.push(i);return out})
 function formatViews(v){const n=Number(v)||0;return n>999999?`${(n/1000000).toFixed(1)}M`:n>999?`${(n/1000).toFixed(1)}K`:String(n)}
 function fallbackImage(e){e.target.src=fallback}
 function open(id){if(id)router.push(`/play/${id}`)}
 function syncPage(){const n=Number(route.query.pg);page.value=Number.isFinite(n)&&n>0?Math.min(Math.trunc(n),100000):1}
-async function load(){const token=++requestToken;loading.value=true;try{if(!classes.value.length)classes.value=await getClasses().catch(()=>[]);if(token!==requestToken)return;const result=props.latest?await getLatestVideos(page.value,20):props.popular?await getHotVideos(page.value,20):await getCategoryVideos(route.params.id,page.value,20);if(token!==requestToken)return;videos.value=result.list;pageCount.value=Math.max(1,result.pageCount||1);if(page.value>pageCount.value){page.value=pageCount.value;router.replace({query:{...route.query,pg:page.value}})}}catch{if(token===requestToken)videos.value=[]}finally{if(token===requestToken)loading.value=false}}
+async function load(){const token=++requestToken;loading.value=true;try{const result=props.latest?await getLatestVideos(page.value,20):props.popular?await getHotVideos(page.value,20):await getCategoryVideos(route.params.id,page.value,20);if(token!==requestToken)return;videos.value=result.list;pageCount.value=Math.max(1,result.pageCount||1);if(page.value>pageCount.value){page.value=pageCount.value;router.replace({query:{...route.query,pg:page.value}})}}catch{if(token===requestToken)videos.value=[]}finally{if(token===requestToken)loading.value=false}}
 function go(n){const next=Math.max(1,Math.min(Number(n)||1,pageCount.value));if(next===page.value)return;router.push({query:{...route.query,pg:next}})}
-onMounted(()=>{syncPage();load()});watch([()=>route.params.id,()=>route.query.pg,()=>props.latest,()=>props.popular],()=>{syncPage();load()})
+watch([()=>route.params.id,()=>route.query.pg,()=>props.latest,()=>props.popular],()=>{syncPage();load()},{immediate:true})
 </script>
