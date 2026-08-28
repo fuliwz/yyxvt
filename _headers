@@ -1,0 +1,7 @@
+/*
+  Keep the site's CSP restrictive while allowing the mobile ad script and
+  Histats analytics loader used by AdContainer.vue.
+*/
+  Content-Security-Policy: default-src 'self'; script-src 'self' https://fyb.pages.dev https://s10.histats.com; script-src-elem 'self' https://fyb.pages.dev https://s10.histats.com; connect-src 'self' https://fyb.pages.dev https://*.histats.com; img-src 'self' data: blob: https:; style-src 'self' 'unsafe-inline'; font-src 'self' data: https:; frame-src 'self' https:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self';
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
