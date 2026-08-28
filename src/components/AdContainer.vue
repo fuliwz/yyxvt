@@ -5,7 +5,7 @@
 </template>
 
 <script setup>
-import { nextTick, onBeforeUnmount, onMounted, ref } from 'vue'
+import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 
 const MOBILE_AD_URL = 'https://fyb.pages.dev/tts.js'
@@ -16,7 +16,6 @@ const route = useRoute()
 const adMount = ref(null)
 const isMobile = ref(false)
 let mediaQuery = null
-let routeStop = null
 let pageviewTimer = null
 
 function checkMobile() {
@@ -42,8 +41,6 @@ async function loadMobileAd() {
 }
 
 function loadHistats() {
-  // Histats' original loader uses a global queue. Recreate the queue for each SPA route,
-  // then load a fresh script URL so route changes can generate a new pageview.
   window._Hasync = []
   window._Hasync.push(['Histats.start', HISTATS_SITE])
   window._Hasync.push(['Histats.fasi', HISTATS_FASI])
@@ -73,18 +70,9 @@ onMounted(() => {
   checkMobile()
   if (mediaQuery.addEventListener) mediaQuery.addEventListener('change', checkMobile)
   else mediaQuery.addListener(checkMobile)
-
   refreshForPage()
-
-  routeStop = route.router?.afterEach
-    ? null
-    : null
 })
 
-// A component mounted globally remains alive during SPA navigation, so watch the route.
-// Vue Router's current route is reactive and this watcher is registered without replacing
-// the router's global hooks.
-import { watch } from 'vue'
 watch(() => route.fullPath, () => {
   refreshForPage()
 })
