@@ -4,6 +4,8 @@ const api = axios.create({ baseURL: '/api', timeout: 12000, maxContentLength: 8 
 const cache = new Map()
 const pending = new Map()
 const TTL = 60_000
+const DETAIL_TTL = 300_000
+const MAX_CACHE = 120
 const DEFAULT_LIMIT = 20
 const MAX_LIMIT = 48
 const MAX_PAGE = 100000
@@ -26,6 +28,11 @@ function safeText(value, max = MAX_KEYWORD) { return String(value ?? '').trim().
 function safeId(value) {
   const id = safeText(value, 64)
   return /^[A-Za-z0-9_-]+$/.test(id) ? id : ''
+}
+function touchCache(key, entry) {
+  cache.delete(key)
+  cache.set(key, entry)
+  while (cache.size > MAX_CACHE) cache.delete(cache.keys().next().value)
 }
 
 export function normalizeVod(v = {}) {
@@ -62,14 +69,25 @@ export function parsePlaySources(item) {
 
 async function request(path, params = {}) {
   const k = cacheKey(path, params)
+  const now = Date.now()
   const cached = cache.get(k)
-  if (cached && Date.now() - cached.time < TTL) return cached.value
+  const ttl = params.ids ? DETAIL_TTL : TTL
+  if (cached && now - cached.time < ttl) {
+    touchCache(k, cached)
+    return cached.value
+  }
   if (pending.has(k)) return pending.get(k)
   const task = api.get(path, { params }).then(response => {
     const result = { response, data: payload(response) }
-    cache.set(k, { time: Date.now(), value: result })
-    if (cache.size > 100) cache.delete(cache.keys().next().value)
+    touchCache(k, { time: Date.now(), value: result })
     return result
+  }).catch(error => {
+    // If the network fails, use an expired cache entry when one exists.
+    if (cached) {
+      touchCache(k, cached)
+      return cached.value
+    }
+    throw error
   }).finally(() => pending.delete(k))
   pending.set(k, task)
   return task
