@@ -18,16 +18,18 @@
 
     <section class="section category-home"><div class="section-head"><h2>类别</h2><router-link class="see-all" to="/categories">查看全部</router-link></div><div class="category-grid"><router-link v-for="cat in classes.slice(0,8)" :key="cat.type_id" class="category" :to="`/category/${cat.type_id}`"><span>▦</span><div><strong>{{cat.type_name}}</strong><small>浏览内容</small></div></router-link></div></section>
     <section class="section"><div class="section-head"><h2>热门标签</h2><span class="see-all">点击搜索</span></div><div class="tags"><router-link v-for="tag in tags" :key="tag.name" class="tag" :to="`/search?wd=${encodeURIComponent(tag.keyword)}`">{{tag.name}}</router-link></div></section>
-    <footer class="footer"><div>关于我们　条款　隐私　帮助　联系我们</div><div>© 2026 XTV · 示例视频网站</div></footer>
+    <footer class="footer"><div>关于我们　条款　隐私　帮助　联系我们</div><div>{{site.copyright}}</div></footer>
   </section>
 </template>
 <script setup>
 import { onMounted, ref } from 'vue'
-import { getClasses, getLatestVideos, getHotVideos } from '../api/vod'
+import { getLatestVideos, getHotVideos } from '../api/vod'
 import { useRouter } from 'vue-router'
+import categoriesData from '../data/categories.json'
 import tags from '../data/hot-tags.json'
-const router=useRouter(); const tabs=[{key:'latest',label:'最新'},{key:'hot',label:'热门'},{key:'popular',label:'最受欢迎'},{key:'long',label:'长的'},{key:'comments',label:'评论的'},{key:'tags',label:'在标签'}]; const activeTab=ref('latest'); const videos=ref([]); const popular=ref([]); const classes=ref([]); const loading=ref(true); const fallback='https://images.unsplash.com/photo-1485846234645-a62644f84728?auto=format&fit=crop&w=900&q=75'
+import site from '../config/site.js'
+const router=useRouter(); const tabs=[{key:'latest',label:'最新'},{key:'hot',label:'热门'},{key:'popular',label:'最受欢迎'},{key:'long',label:'长的'},{key:'comments',label:'评论的'},{key:'tags',label:'在标签'}]; const activeTab=ref('latest'); const videos=ref([]); const popular=ref([]); const classes=ref(Array.isArray(categoriesData)?categoriesData:[]); const loading=ref(true); const fallback='/fallback.svg'
 function fallbackImage(e){e.target.src=fallback} function open(id){if(id)router.push(`/play/${id}`)} function formatViews(v){const n=Number(v)||0;return n>999999?`${(n/1000000).toFixed(1)}M`:n>999?`${(n/1000).toFixed(1)}K`:String(n)}
 async function load(){loading.value=true;try{const [main,hot]=await Promise.all([activeTab.value==='latest'?getLatestVideos(1,20):getHotVideos(1,20),getHotVideos(1,20)]);videos.value=main.list;popular.value=hot.list}catch{videos.value=[];popular.value=[]}finally{loading.value=false}}
-async function changeTab(key){activeTab.value=key;await load()} onMounted(async()=>{classes.value=await getClasses().catch(()=>[]);await load()})
+async function changeTab(key){activeTab.value=key;await load()} onMounted(load)
 </script>
