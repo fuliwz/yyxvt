@@ -12,10 +12,31 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import { getFriendlyLinks } from '../data/links'
+import { computed } from 'vue'
+import friendlyLinks from '../data/links'
 
-const links = ref(getFriendlyLinks())
+function normalizeHost(value) {
+  return String(value || '')
+    .trim()
+    .toLowerCase()
+    .replace(/^https?:\/\//, '')
+    .split('/')[0]
+    .split(':')[0]
+    .replace(/^www\./, '')
+}
+
+function resolveLinks() {
+  const host = normalizeHost(window.location.hostname)
+  const exactKey = Object.keys(friendlyLinks).find((key) => normalizeHost(key) === host)
+  if (exactKey) return friendlyLinks[exactKey] || []
+
+  const previewKey = Object.keys(friendlyLinks).find((key) => key === '*.yyxvt.pages.dev')
+  if (host.endsWith('.yyxvt.pages.dev') && previewKey) return friendlyLinks[previewKey] || []
+
+  return []
+}
+
+const links = computed(() => resolveLinks())
 </script>
 
 <style scoped>
