@@ -5,6 +5,8 @@ import site from './config/site.js'
 import './styles.css'
 import './xtv-pages.css'
 import './video-grid.css'
+import './styles-play.css'
+import 'plyr/dist/plyr.css'
 
 const Home = () => import('./views/Home.vue')
 const Category = () => import('./views/Category.vue')
