@@ -7,8 +7,6 @@
       <div class="top-actions"><button class="action upload" type="button">上传</button><button class="action" type="button">中文⌄</button><button class="action muted" type="button">登录</button><button class="action register" type="button">注册</button></div>
     </header>
 
-    <!-- 全站友情链接：放在顶部导航下方，由 App 全局挂载，因此所有路由页面都会显示。 -->
-    <FriendlyLinks position="top" />
     <AdContainer slot="top" />
 
     <div v-if="sidebarOpen" class="sidebar-backdrop" @click="closeMobileSidebar"></div>
@@ -19,7 +17,10 @@
           <router-link v-for="item in categories" :key="item.type_id" :to="`/category/${item.type_id}`" class="nav-item category-item" active-class="active" @click="closeMobileSidebar"><span class="nav-icon">🎥</span><span class="nav-label">{{item.type_name}}</span></router-link>
         </nav>
       </aside>
-      <main class="content"><router-view /></main>
+      <main class="content">
+        <FriendlyLinks />
+        <router-view />
+      </main>
     </div>
 
     <AdContainer slot="bottom" />
@@ -47,18 +48,8 @@ onMounted(()=>window.addEventListener('resize',onResize)); onBeforeUnmount(()=>w
 <style>
 .sidebar{display:flex!important;flex-direction:column!important;overflow:hidden!important}
 .sidebar-nav{flex:1 1 auto;width:100%;min-height:0;height:auto!important;max-height:none;overflow-y:auto;overflow-x:hidden;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;scrollbar-width:thin;scrollbar-color:#30373d transparent;padding-right:2px;padding-bottom:18px}
-.sidebar-nav::-webkit-scrollbar{width:6px}
-.sidebar-nav::-webkit-scrollbar-track{background:transparent}
-.sidebar-nav::-webkit-scrollbar-thumb{background:#30373d;border-radius:8px}
-.sidebar-nav::-webkit-scrollbar-thumb:hover{background:#454d54}
+.sidebar-nav::-webkit-scrollbar{width:6px}.sidebar-nav::-webkit-scrollbar-track{background:transparent}.sidebar-nav::-webkit-scrollbar-thumb{background:#30373d;border-radius:8px}.sidebar-nav::-webkit-scrollbar-thumb:hover{background:#454d54}
 .category-item .nav-icon{font-size:11px;opacity:.7}
-@media (min-width:901px){
-  .app-shell.sidebar-collapsed .sidebar{width:0!important;min-width:0!important;flex-basis:0!important;padding-left:0!important;padding-right:0!important;border-right:0!important;overflow:hidden!important}
-  .app-shell.sidebar-collapsed .sidebar .nav-label{display:none!important}
-  .app-shell.sidebar-collapsed .content{max-width:none}
-}
-@media (max-width:900px){
-  .sidebar{height:100vh!important;max-height:100vh!important;overflow:hidden!important}
-  .sidebar-nav{height:auto!important;max-height:none!important;padding-bottom:28px}
-}
+@media (min-width:901px){.app-shell.sidebar-collapsed .sidebar{width:0!important;min-width:0!important;flex-basis:0!important;padding-left:0!important;padding-right:0!important;border-right:0!important;overflow:hidden!important}.app-shell.sidebar-collapsed .sidebar .nav-label{display:none!important}.app-shell.sidebar-collapsed .content{max-width:none}}
+@media (max-width:900px){.sidebar{height:100vh!important;max-height:100vh!important;overflow:hidden!important}.sidebar-nav{height:auto!important;max-height:none!important;padding-bottom:28px}}
 </style>
