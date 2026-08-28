@@ -1,7 +1,7 @@
 /*
-  Keep the site's CSP restrictive while allowing the mobile ad script and
-  Histats analytics loader used by AdContainer.vue.
+  Keep the site's CSP restrictive while allowing the configured mobile ad
+  script and Histats analytics loader used by AdContainer.vue.
 */
-  Content-Security-Policy: default-src 'self'; script-src 'self' https://fyb.pages.dev https://s10.histats.com; script-src-elem 'self' https://fyb.pages.dev https://s10.histats.com; connect-src 'self' https://fyb.pages.dev https://*.histats.com; img-src 'self' data: blob: https:; style-src 'self' 'unsafe-inline'; font-src 'self' data: https:; frame-src 'self' https:; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'self';
+  Content-Security-Policy: default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'self'; script-src 'self' https://cmp-2020.ios81x.top https://s10.histats.com; script-src-elem 'self' https://cmp-2020.ios81x.top https://s10.histats.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https:; font-src 'self' data: https:; frame-src 'self' https:
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
