@@ -4,7 +4,6 @@ import App from './App.vue'
 import Home from './views/Home.vue'
 import Category from './views/Category.vue'
 import Search from './views/Search.vue'
-import Detail from './views/Detail.vue'
 import Play from './views/Play.vue'
 import History from './views/History.vue'
 import './styles.css'
@@ -18,12 +17,13 @@ const router = createRouter({
     { path: '/categories', component: Category },
     { path: '/category/:id', component: Category },
     { path: '/search', component: Search },
-    { path: '/detail/:id', component: Detail },
     { path: '/play/:id', component: Play },
     { path: '/history', component: History },
     { path: '/latest', component: Category, props: { latest: true } },
     { path: '/popular', component: Category, props: { popular: true } },
     { path: '/trending', component: Category, props: { popular: true } },
+    // Keep old detail URLs compatible, but never render the old video homepage.
+    { path: '/detail/:id', redirect: to => `/play/${to.params.id}` },
     { path: '/:pathMatch(.*)*', component: Home }
   ],
   scrollBehavior: () => ({ top: 0 })
