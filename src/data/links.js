@@ -1,7 +1,7 @@
 // 友情链接配置：直接打包进前端，不请求 /links.json 或 /link.json。
 // 每个域名对应一个二维数组：[显示名称, URL]
 const FRIENDLY_LINKS = {
-  'acv12.top': [
+  'yyxvt.pages.dev'': [
     ['站点A', 'https://example.com/'],
     ['站点B', 'https://example2.com/']
   ],
