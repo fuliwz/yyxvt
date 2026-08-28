@@ -1,0 +1,20 @@
+[
+  {"name":"最新电影","keyword":"最新电影"},
+  {"name":"热门电影","keyword":"热门电影"},
+  {"name":"动作电影","keyword":"动作电影"},
+  {"name":"喜剧电影","keyword":"喜剧电影"},
+  {"name":"爱情电影","keyword":"爱情电影"},
+  {"name":"科幻电影","keyword":"科幻电影"},
+  {"name":"悬疑电影","keyword":"悬疑电影"},
+  {"name":"恐怖电影","keyword":"恐怖电影"},
+  {"name":"犯罪电影","keyword":"犯罪电影"},
+  {"name":"战争电影","keyword":"战争电影"},
+  {"name":"国产电影","keyword":"国产电影"},
+  {"name":"欧美电影","keyword":"欧美电影"},
+  {"name":"日韩电影","keyword":"日韩电影"},
+  {"name":"经典电影","keyword":"经典电影"},
+  {"name":"高分电影","keyword":"高分电影"},
+  {"name":"科幻大片","keyword":"科幻大片"},
+  {"name":"动作大片","keyword":"动作大片"},
+  {"name":"电影推荐","keyword":"电影推荐"}
+]
