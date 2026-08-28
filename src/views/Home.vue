@@ -17,7 +17,6 @@
     </section>
 
     <section class="section category-home"><div class="section-head"><h2>类别</h2><router-link class="see-all" to="/categories">查看全部</router-link></div><div class="category-grid"><router-link v-for="cat in classes.slice(0,8)" :key="cat.type_id" class="category" :to="`/category/${cat.type_id}`"><span>▦</span><div><strong>{{cat.type_name}}</strong><small>浏览内容</small></div></router-link></div></section>
-    <section class="intro-panel"><h2>内容导航</h2><p>浏览最新更新、热门内容和分类资源。页面采用同源 API、缓存和请求去重，减少重复网络请求并提升首屏响应速度。</p></section>
     <section class="section"><div class="section-head"><h2>热门标签</h2><span class="see-all">点击搜索</span></div><div class="tags"><router-link v-for="tag in tags" :key="tag.name" class="tag" :to="`/search?wd=${encodeURIComponent(tag.keyword)}`">{{tag.name}}</router-link></div></section>
     <footer class="footer"><div>关于我们　条款　隐私　帮助　联系我们</div><div>© 2026 XTV · 示例视频网站</div></footer>
   </section>
