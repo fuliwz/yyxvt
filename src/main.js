@@ -6,6 +6,7 @@ import Category from './views/Category.vue'
 import Search from './views/Search.vue'
 import Play from './views/Play.vue'
 import History from './views/History.vue'
+import NotFound from './views/NotFound.vue'
 import site from './config/site.js'
 import './styles.css'
 import './xtv-pages.css'
@@ -28,7 +29,7 @@ const router = createRouter({
     { path: '/popular', component: Category, props: { popular: true } },
     { path: '/trending', component: Category, props: { popular: true } },
     { path: '/detail/:id', redirect: to => `/play/${to.params.id}` },
-    { path: '/:pathMatch(.*)*', component: Home }
+    { path: '/:pathMatch(.*)*', component: NotFound }
   ],
   scrollBehavior: () => ({ top: 0 })
 })
