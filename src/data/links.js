@@ -3,9 +3,9 @@
 const FRIENDLY_LINKS = {
   // 正式域名
   'xn--opl235-931i.haijav.top': [
-   ['绿色导航', 'https://韝i犇.greendh.org/驫翧y'],
-  ['柠檬导航', 'https://邬焺.nmdh18.com/p嶴q'],
-  ['花小猪导航', 'https://燚r.9qqq.cc/飽翧'],
+   ['绿色导航', 'https://煐毳誩v.greendh.org/喆r甦'],
+  ['找AV导航', 'https://4pmycp.zavdh18.qpon/zapat9kp'],
+  ['花小猪导航', 'https://棽蹵祎.9qqq.cc/粺锳'],
   ['妖涩梨导航', 'https://嗷嗷嗷嗷.yaosl1.sbs/?mark=Q1TN3T'],
   ['娱乐青导航', 'http://819ylq.yuleqing17.cc/app/Mf4viP'],
   ['红浪漫导航', 'http://819llm.hlmhs3.top/app/gcbfcV'],
