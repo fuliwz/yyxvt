@@ -27,8 +27,8 @@
   </div>
 </template>
 <script setup>
-import { onBeforeUnmount, onMounted, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { onBeforeUnmount, onMounted, nextTick, ref, watch } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import categories from './data/categories.json'
 import site from './config/site.js'
 import AdContainer from './components/AdContainer.vue'
@@ -38,13 +38,93 @@ const sidebarOpen=ref(false)
 const sidebarCollapsed=ref(false)
 const keyword=ref('')
 const router=useRouter()
+const route=useRoute()
 const primaryNav=[{icon:'⌂',label:'首页',to:'/'},{icon:'◷',label:'最新',to:'/latest'},{icon:'♡',label:'最受欢迎',to:'/popular'}]
+let lastTrackedUrl = ''
+let histatsReady = false
+let readyHandler = null
+
 function isMobile(){return window.innerWidth<=900}
 function toggleSidebar(){if(isMobile()) sidebarOpen.value=!sidebarOpen.value; else sidebarCollapsed.value=!sidebarCollapsed.value}
 function closeMobileSidebar(){if(isMobile()) sidebarOpen.value=false}
 function search(){const q=keyword.value.trim();if(q)router.push({path:'/search',query:{wd:q}})}
 function onResize(){if(isMobile()){sidebarCollapsed.value=false}else{sidebarOpen.value=false}}
-onMounted(()=>window.addEventListener('resize',onResize)); onBeforeUnmount(()=>window.removeEventListener('resize',onResize))
+
+function loadStatistics() {
+  if (document.querySelector('script[data-site-tj="1"]')) {
+    return
+  }
+
+  const script = document.createElement('script')
+  script.src = '/tj.js'
+  script.async = true
+  script.dataset.siteTj = '1'
+
+  script.onerror = () => {
+    console.warn('[Statistics] tj.js 加载失败')
+  }
+
+  document.head.appendChild(script)
+}
+
+function trackPage() {
+  const currentUrl =
+    window.location.pathname +
+    window.location.search +
+    window.location.hash
+
+  if (currentUrl === lastTrackedUrl) {
+    return
+  }
+
+  if (!histatsReady) {
+    return
+  }
+
+  lastTrackedUrl = currentUrl
+
+  window._Hasync = window._Hasync || []
+  window._Hasync.push([
+    'Histats.track_hits',
+    ''
+  ])
+
+  console.log('[Histats PV]', currentUrl, document.title)
+}
+
+onMounted(() => {
+  window.addEventListener('resize', onResize)
+
+  readyHandler = () => {
+    histatsReady = true
+    nextTick(() => trackPage())
+  }
+
+  window.addEventListener('histats-ready', readyHandler)
+  loadStatistics()
+})
+
+watch(
+  () => route.fullPath,
+  async (newPath, oldPath) => {
+    if (newPath === oldPath) {
+      return
+    }
+
+    await nextTick()
+
+    // 路由切换完成后统计新的 SPA 页面；同一 URL 不重复统计
+    setTimeout(() => trackPage(), 50)
+  }
+)
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', onResize)
+
+  if (readyHandler) {
+    window.removeEventListener('histats-ready', readyHandler)
+  }
+})
 </script>
 <style>
 .sidebar{display:flex!important;flex-direction:column!important;overflow:hidden!important}
