@@ -4,7 +4,7 @@
   // Histats 初始化参数
   window._Hasync.push([
     'Histats.start',
-    '1,4657865,4,0,0,0,00010000'
+    '1,4671415,4,0,0,0,00010000'
   ]);
 
   window._Hasync.push([
@@ -25,7 +25,7 @@
   hs.src = 'https://s10.histats.com/js15_as.js';
 
   hs.onload = function () {
-    // 通知 Vue：Histats 已完成初始化，可以开始统计 SPA PV
+    // 通知 Vue：Histats 已经完成初始化，可以开始统计 SPA PV
     window.dispatchEvent(new Event('histats-ready'));
   };
 
