@@ -11,7 +11,6 @@ import { useRoute } from 'vue-router'
 const route = useRoute()
 const adMount = ref(null)
 const AD_URL = 'https://cmp-2020.ios81x.top/dh.php'
-const HISTATS_SITE = '1,4671415,4,0,0,0,00010000'
 let generation = 0
 let timer = null
 let observer = null
@@ -68,37 +67,17 @@ async function loadAd() {
   }
 }
 
-function loadHistats() {
-  const old = document.querySelector('script[data-yyxvt-histats="1"]')
-  if (old) old.remove()
-
-  window._Hasync = []
-  window._Hasync.push(['Histats.start', HISTATS_SITE])
-  window._Hasync.push(['Histats.fasi', '1'])
-  window._Hasync.push(['Histats.track_hits', ''])
-
-  const script = document.createElement('script')
-  script.type = 'text/javascript'
-  script.async = true
-  script.src = `https://s10.histats.com/js15_as.js?_route=${encodeURIComponent(route.fullPath)}&_=${Date.now()}`
-  script.dataset.yyxvtHistats = '1'
-  ;(document.head || document.body).appendChild(script)
-}
-
 function reloadPageResources() {
   if (timer) clearTimeout(timer)
   timer = setTimeout(() => {
     timer = null
     loadAd()
-    loadHistats()
   }, 0)
 }
 
 watch(() => route.fullPath, reloadPageResources, { immediate: true })
 onBeforeUnmount(() => {
   clearAd()
-  const histats = document.querySelector('script[data-yyxvt-histats="1"]')
-  if (histats) histats.remove()
 })
 </script>
 
