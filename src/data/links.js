@@ -15,9 +15,9 @@ const FRIENDLY_LINKS = {
   ['荔枝导航', 'http://627lizhii.lizhidh3.top/app/tosXlA']
   ],
   'xn--xn--ifia-5058c.haijav.top': [
-    ['蓝色导航', 'https://wn62.bluedh63.loan/3a49rgw'],
-  ['蓝导航', 'https://zun7a.landh83.pw/z4gjqs'],
-  ['找AV导航', 'https://uo2xsr.zavdh18.qpon/3kkh52h'],
+    ['蓝色导航', 'https://nzru.bluedh63.loan/cqyhw37'],
+  ['蓝导航', 'https://3pssi.landh17.party/nvrdcdl'],
+  ['福利嫂导航', 'https://顺.flsgo.cc/世界和平.html'],
   ['6DD导航', 'http://6146d.5ddd6.top/app/f6nEP9'],
   ['红颜导航', 'http://614hy.hongyan2.top/app/O18VPF'],
   ['柳如烟导航', 'http://508lry.lrydd.top/app/psEPAJ'],
