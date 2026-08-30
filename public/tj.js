@@ -3,29 +3,22 @@
     return location.pathname + location.search + location.hash;
   }
 
+  if (window.__yyxvtHistatsScriptLoaded) return;
+
   window._Hasync = window._Hasync || [];
   window.__yyxvtTrackedPages = window.__yyxvtTrackedPages || Object.create(null);
+  window.__yyxvtHistatsReadyState = !!window.__yyxvtHistatsReadyState;
+  window.__yyxvtHistatsScriptLoaded = true;
 
-  // Expose the tracking API before loading Histats so App.vue can safely
-  // call it as soon as the ready state becomes true.
   window.__yyxvtTrackPage = function (url) {
     var current = String(url || currentUrl());
-    if (!current || window.__yyxvtTrackedPages[current]) return false;
-    if (!window.__yyxvtHistatsReadyState) return false;
+    if (!current || !window.__yyxvtHistatsReadyState) return false;
+    if (window.__yyxvtLastTrackedUrl === current) return false;
 
+    window.__yyxvtLastTrackedUrl = current;
     window._Hasync.push(['Histats.track_hits', '']);
-    window.__yyxvtTrackedPages[current] = true;
     return true;
   };
-
-  if (window.__yyxvtHistatsLoaderStarted || window.__yyxvtHistatsReadyState) {
-    if (window.__yyxvtHistatsReadyState) {
-      setTimeout(function () { window.__yyxvtTrackPage(currentUrl()); }, 0);
-    }
-    return;
-  }
-
-  window.__yyxvtHistatsLoaderStarted = true;
 
   window._Hasync.push([
     'Histats.start',
@@ -33,24 +26,34 @@
   ]);
   window._Hasync.push(['Histats.fasi', '1']);
 
+  var existing = document.querySelector('script[data-histats="1"]');
+  if (existing) {
+    if (existing.dataset.loaded === '1') {
+      window.__yyxvtHistatsReadyState = true;
+      setTimeout(function () { window.__yyxvtTrackPage(currentUrl()); }, 0);
+    }
+    return;
+  }
+
   var hs = document.createElement('script');
   hs.type = 'text/javascript';
   hs.async = true;
   hs.dataset.histats = '1';
   hs.src = 'https://s10.histats.com/js15_as.js';
-
   hs.onload = function () {
+    hs.dataset.loaded = '1';
     window.__yyxvtHistatsReadyState = true;
-    window.dispatchEvent(new Event('histats-ready'));
-    setTimeout(function () {
-      window.__yyxvtTrackPage(currentUrl());
-    }, 0);
-  };
-
-  hs.onerror = function () {
     window.__yyxvtHistatsLoaderStarted = false;
+    window.dispatchEvent(new Event('histats-ready'));
+    setTimeout(function () { window.__yyxvtTrackPage(currentUrl()); }, 0);
+  };
+  hs.onerror = function () {
+    window.__yyxvtHistatsReadyState = false;
+    window.__yyxvtHistatsLoaderStarted = false;
+    window.__yyxvtHistatsScriptLoaded = false;
     console.warn('[Histats] script load failed');
   };
 
+  window.__yyxvtHistatsLoaderStarted = true;
   (document.head || document.body || document.documentElement).appendChild(hs);
 })();
