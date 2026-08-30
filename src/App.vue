@@ -52,7 +52,6 @@ function currentUrl(){return window.location.pathname+window.location.search+win
 
 function loadStatistics() {
   if (document.querySelector('script[data-site-tj="1"]')) return
-
   const script = document.createElement('script')
   script.src = '/tj.js'
   script.async = true
@@ -72,7 +71,6 @@ function trackPage() {
 
 onMounted(() => {
   window.addEventListener('resize', onResize)
-
   readyHandler = () => {
     histatsReady = true
     nextTick(() => trackPage())
