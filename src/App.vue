@@ -41,6 +41,7 @@ const primaryNav=[{icon:'⌂',label:'首页',to:'/'},{icon:'◷',label:'最新',
 let lastTrackedUrl = ''
 let histatsReady = false
 let readyHandler = null
+let routeTimer = null
 
 function isMobile(){return window.innerWidth<=900}
 function toggleSidebar(){if(isMobile()) sidebarOpen.value=!sidebarOpen.value; else sidebarCollapsed.value=!sidebarCollapsed.value}
@@ -50,11 +51,6 @@ function onResize(){if(isMobile()){sidebarCollapsed.value=false}else{sidebarOpen
 function currentUrl(){return window.location.pathname+window.location.search+window.location.hash}
 
 function loadStatistics() {
-  // tj.js owns the Histats loader state. App only loads that local bootstrap once.
-  if (window.__yyxvtHistatsReadyState || window.__yyxvtHistatsLoaderStarted) {
-    if (window.__yyxvtHistatsReadyState) nextTick(() => trackPage())
-    return
-  }
   if (document.querySelector('script[data-site-tj="1"]')) return
 
   const script = document.createElement('script')
@@ -65,32 +61,40 @@ function loadStatistics() {
   document.head.appendChild(script)
 }
 
-function trackPage(url = currentUrl()) {
-  if (!histatsReady || url === lastTrackedUrl) return
-  if (typeof window.__yyxvtTrackPage === 'function') {
-    if (window.__yyxvtTrackPage(url)) lastTrackedUrl = url
-  }
+function trackPage() {
+  const current = currentUrl()
+  if (!histatsReady || current === lastTrackedUrl) return
+  lastTrackedUrl = current
+  window._Hasync = window._Hasync || []
+  window._Hasync.push(['Histats.track_hits', ''])
+  console.log('[Histats PV]', current, document.title)
 }
 
 onMounted(() => {
   window.addEventListener('resize', onResize)
+
   readyHandler = () => {
     histatsReady = true
     nextTick(() => trackPage())
   }
-  window.addEventListener('histats-ready', readyHandler, { once: true })
+  window.addEventListener('histats-ready', readyHandler)
   loadStatistics()
 })
 
 watch(() => route.fullPath, async (newPath, oldPath) => {
   if (newPath === oldPath) return
   await nextTick()
-  setTimeout(() => trackPage(newPath), 0)
+  if (routeTimer) clearTimeout(routeTimer)
+  routeTimer = setTimeout(() => {
+    trackPage()
+    routeTimer = null
+  }, 50)
 })
 
 onBeforeUnmount(() => {
   window.removeEventListener('resize', onResize)
   if (readyHandler) window.removeEventListener('histats-ready', readyHandler)
+  if (routeTimer) clearTimeout(routeTimer)
 })
 </script>
 <style>
