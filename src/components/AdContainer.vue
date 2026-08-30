@@ -5,119 +5,75 @@
 </template>
 
 <script setup>
-import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { useRoute } from 'vue-router'
+import { onBeforeUnmount, onMounted, ref } from 'vue'
 
-const route = useRoute()
 const adMount = ref(null)
 const AD_URL = 'https://cmp-2020.ios81x.top/dh.php'
+const AD_SCRIPT_ID = 'yyxvt-mobile-ad-script'
 
-let generation = 0
-let lastRoute = ''
-let timer = null
-let observer = null
 let adScript = null
-let adNodes = []
+let observer = null
 
-function stopObserver() {
-  if (observer) {
-    observer.disconnect()
-    observer = null
-  }
-}
-
-function startObserver(currentGeneration) {
+function startObserver() {
   if (typeof MutationObserver === 'undefined') return
-  stopObserver()
+  if (observer) return
+
   observer = new MutationObserver((mutations) => {
-    if (currentGeneration !== generation) return
     mutations.forEach((mutation) => {
       mutation.addedNodes.forEach((node) => {
         if (!(node instanceof Element)) return
         if (adMount.value && adMount.value.contains(node)) return
-        node.setAttribute('data-yyxvt-ad-node', '1')
-        adNodes.push(node)
+        // Do not delete unrelated page nodes; only mark nodes produced by the ad loader.
+        if (node.id === AD_SCRIPT_ID || node.closest?.(`#${AD_SCRIPT_ID}`)) return
       })
     })
   })
+
   observer.observe(document.head, { childList: true })
   observer.observe(document.body, { childList: true })
 }
 
-function clearAd() {
-  if (adScript && adScript.parentNode) adScript.parentNode.removeChild(adScript)
-  adScript = null
+function loadAdOnce() {
+  if (!adMount.value) return
 
-  adNodes.forEach((node) => {
-    if (node && node.parentNode) node.parentNode.removeChild(node)
-  })
-  adNodes = []
+  const existing = document.getElementById(AD_SCRIPT_ID)
+  if (existing || window.__yyxvtAdLoaded || window.__yyxvtAdLoading) return
 
-  document.querySelectorAll('[data-yyxvt-ad-node="1"]').forEach((node) => node.remove())
-  if (adMount.value) adMount.value.replaceChildren()
-}
-
-async function loadAd(force = false) {
-  await nextTick()
-
-  const target = adMount.value
-  if (!target) return
-
-  const routeKey = route.fullPath || '/'
-  if (!force && lastRoute === routeKey) return
-
-  lastRoute = routeKey
-  const currentGeneration = ++generation
-
-  if (timer) {
-    clearTimeout(timer)
-    timer = null
-  }
-
-  stopObserver()
-  clearAd()
-  startObserver(currentGeneration)
+  window.__yyxvtAdLoading = true
 
   const script = document.createElement('script')
+  script.id = AD_SCRIPT_ID
   script.type = 'text/javascript'
-  script.async = false
+  script.async = true
   script.dataset.yyxvtAd = '1'
-  script.src = `${AD_URL}?_route=${encodeURIComponent(routeKey)}`
+  script.src = AD_URL
+
+  script.onload = () => {
+    window.__yyxvtAdLoaded = true
+    window.__yyxvtAdLoading = false
+  }
 
   script.onerror = () => {
-    if (currentGeneration === generation) {
-      console.warn('[AdContainer] advertisement failed to load')
-    }
+    window.__yyxvtAdLoading = false
+    console.warn('[AdContainer] advertisement failed to load')
   }
 
   adScript = script
-  target.appendChild(script)
+  adMount.value.appendChild(script)
 }
 
 onMounted(() => {
-  loadAd()
+  startObserver()
+  loadAdOnce()
 })
 
-watch(
-  () => route.fullPath,
-  (newPath, oldPath) => {
-    if (newPath === oldPath || newPath === lastRoute) return
-
-    if (timer) clearTimeout(timer)
-    timer = setTimeout(() => {
-      timer = null
-      loadAd()
-    }, 0)
-  }
-)
-
 onBeforeUnmount(() => {
-  ++generation
-  if (timer) clearTimeout(timer)
-  timer = null
-  stopObserver()
-  clearAd()
-  lastRoute = ''
+  if (observer) {
+    observer.disconnect()
+    observer = null
+  }
+  // Deliberately keep the ad script alive during SPA route changes.
+  adScript = null
 })
 </script>
 
