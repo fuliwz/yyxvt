@@ -16,7 +16,7 @@ import AdContainer from './components/AdContainer.vue'
 const route = useRoute()
 let readyHandler = null
 let statsScript = null
-let routeWatchStop = null
+let stopRouteWatch = null
 
 function currentUrl() {
   return window.location.pathname + window.location.search + window.location.hash
@@ -28,20 +28,22 @@ function trackPage() {
 }
 
 function loadStatistics() {
-  const existing = document.querySelector('script[data-site-tj="1"]')
-  if (existing || window.__yyxvtHistatsReadyState || window.__yyxvtHistatsLoaderStarted) return
+  if (window.__yyxvtHistatsReadyState) {
+    nextTick(() => trackPage())
+    return
+  }
+
+  if (document.querySelector('script[data-site-tj="1"]')) return
 
   statsScript = document.createElement('script')
   statsScript.src = '/tj.js'
   statsScript.async = true
   statsScript.dataset.siteTj = '1'
-  statsScript.onload = () => {
-    if (window.__yyxvtHistatsReadyState) trackPage()
-  }
   statsScript.onerror = () => {
     window.__yyxvtHistatsLoaderStarted = false
     console.warn('[Statistics] tj.js 加载失败')
   }
+
   window.__yyxvtHistatsLoaderStarted = true
   document.head.appendChild(statsScript)
 }
@@ -55,11 +57,7 @@ onMounted(() => {
   window.addEventListener('histats-ready', readyHandler)
   loadStatistics()
 
-  if (window.__yyxvtHistatsReadyState) {
-    nextTick(() => trackPage())
-  }
-
-  routeWatchStop = watch(
+  stopRouteWatch = watch(
     () => route.fullPath,
     async (newPath, oldPath) => {
       if (newPath === oldPath) return
@@ -72,7 +70,7 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   if (readyHandler) window.removeEventListener('histats-ready', readyHandler)
-  if (routeWatchStop) routeWatchStop()
+  if (stopRouteWatch) stopRouteWatch()
   statsScript = null
 })
 </script>
