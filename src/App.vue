@@ -14,83 +14,59 @@ import Footer from './components/Footer.vue'
 import AdContainer from './components/AdContainer.vue'
 
 const route = useRoute()
-
-let lastTrackedUrl = ''
-let histatsReady = false
 let readyHandler = null
+let statsScript = null
 
-function loadStatistics() {
-  if (document.querySelector('script[data-site-tj="1"]')) {
-    return
-  }
-
-  const script = document.createElement('script')
-  script.src = '/tj.js'
-  script.async = true
-  script.dataset.siteTj = '1'
-
-  script.onerror = () => {
-    console.warn('[Statistics] tj.js 加载失败')
-  }
-
-  document.head.appendChild(script)
+function currentUrl() {
+  return window.location.pathname + window.location.search + window.location.hash
 }
 
 function trackPage() {
-  const currentUrl =
-    window.location.pathname +
-    window.location.search +
-    window.location.hash
+  if (typeof window.__yyxvtTrackPage !== 'function') return false
+  return window.__yyxvtTrackPage(currentUrl())
+}
 
-  if (currentUrl === lastTrackedUrl) {
-    return
-  }
+function loadStatistics() {
+  // Singleton guard. This also protects against HMR or an accidental second
+  // App mount inserting another copy of tj.js.
+  if (window.__yyxvtHistatsLoaderStarted) return
 
-  if (!histatsReady) {
-    return
-  }
+  statsScript = document.createElement('script')
+  statsScript.src = '/tj.js'
+  statsScript.async = true
+  statsScript.dataset.siteTj = '1'
+  statsScript.onerror = () => console.warn('[Statistics] tj.js 加载失败')
+  document.head.appendChild(statsScript)
+}
 
-  lastTrackedUrl = currentUrl
-
-  window._Hasync = window._Hasync || []
-  window._Hasync.push([
-    'Histats.track_hits',
-    ''
-  ])
-
-  console.log('[Histats PV]', currentUrl, document.title)
+function onHistatsReady() {
+  nextTick(() => trackPage())
 }
 
 onMounted(() => {
-  readyHandler = () => {
-    histatsReady = true
-
-    nextTick(() => {
-      trackPage()
-    })
-  }
-
-  window.addEventListener('histats-ready', readyHandler)
+  readyHandler = onHistatsReady
+  window.addEventListener('histats-ready', readyHandler, { once: true })
   loadStatistics()
+
+  // Handles the case where tj.js has already finished before the listener was
+  // attached (for example after a client-side HMR update).
+  if (window.__yyxvtHistatsReadyState) {
+    nextTick(() => trackPage())
+  }
 })
 
 watch(
   () => route.fullPath,
   async (newPath, oldPath) => {
-    if (newPath === oldPath) {
-      return
-    }
+    if (newPath === oldPath) return
 
-    window.scrollTo({
-      top: 0,
-      behavior: 'smooth'
-    })
-
+    window.scrollTo({ top: 0, behavior: 'smooth' })
     await nextTick()
 
-    setTimeout(() => {
+    // Do not count a navigation until Histats has actually initialized.
+    if (window.__yyxvtHistatsReadyState) {
       trackPage()
-    }, 50)
+    }
   }
 )
 
@@ -98,5 +74,6 @@ onBeforeUnmount(() => {
   if (readyHandler) {
     window.removeEventListener('histats-ready', readyHandler)
   }
+  statsScript = null
 })
 </script>
