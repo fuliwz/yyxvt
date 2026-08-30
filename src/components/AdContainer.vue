@@ -5,79 +5,122 @@
 </template>
 
 <script setup>
-import { nextTick, onBeforeUnmount, ref, watch } from 'vue'
+import { nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 
 const route = useRoute()
 const adMount = ref(null)
 const AD_URL = 'https://cmp-2020.ios81x.top/dh.php'
-let generation = 0
-let timer = null
-let observer = null
-let adNodes = new Set()
 
-function rememberNode(node) {
-  if (!(node instanceof Node)) return
-  if (adMount.value?.contains(node)) return
-  adNodes.add(node)
-  if (node.nodeType === Node.ELEMENT_NODE) node.setAttribute('data-yyxvt-ad-node', '1')
+let loadToken = 0
+let lastLoadedRoute = null
+let observer = null
+let adScript = null
+let timer = null
+
+function stopObserver() {
+  if (observer) {
+    observer.disconnect()
+    observer = null
+  }
 }
 
-function startObserver() {
+function startObserver(token) {
   if (typeof MutationObserver === 'undefined') return
-  observer?.disconnect()
-  observer = new MutationObserver(mutations => {
-    mutations.forEach(mutation => mutation.addedNodes.forEach(rememberNode))
+
+  stopObserver()
+  observer = new MutationObserver((mutations) => {
+    if (token !== loadToken) return
+    for (const mutation of mutations) {
+      for (const node of mutation.addedNodes) {
+        if (node.nodeType === Node.ELEMENT_NODE && !adMount.value?.contains(node)) {
+          node.setAttribute('data-yyxvt-ad-node', '1')
+        }
+      }
+    }
   })
+
   observer.observe(document.head, { childList: true })
   observer.observe(document.body, { childList: true })
 }
 
-function stopObserver() {
-  observer?.disconnect()
-  observer = null
+function clearPreviousAd() {
+  if (adScript?.parentNode) adScript.parentNode.removeChild(adScript)
+  adScript = null
+
+  document.querySelectorAll('[data-yyxvt-ad-node="1"]').forEach((node) => node.remove())
+  adMount.value?.replaceChildren()
 }
 
-function clearAd() {
-  generation += 1
+async function loadAd(force = false) {
+  await nextTick()
+
+  const target = adMount.value
+  if (!target) return
+
+  const routeKey = route.fullPath
+  if (!force && lastLoadedRoute === routeKey) return
+
+  // Invalidate any previous asynchronous load before replacing the ad.
+  const token = ++loadToken
+  lastLoadedRoute = routeKey
+
+  if (timer) {
+    clearTimeout(timer)
+    timer = null
+  }
+
+  stopObserver()
+  clearPreviousAd()
+  startObserver(token)
+
+  const script = document.createElement('script')
+  script.type = 'text/javascript'
+  script.async = false
+  script.dataset.yyxvtAd = '1'
+  // Do not append a cache-busting timestamp: it caused every navigation to
+  // create a different URL and made duplicate requests harder to diagnose.
+  script.src = `${AD_URL}?_route=${encodeURIComponent(routeKey)}`
+
+  script.onload = () => {
+    if (token !== loadToken) return
+  }
+  script.onerror = () => {
+    if (token === loadToken) {
+      console.warn('[AdContainer] advertisement failed to load')
+    }
+  }
+
+  adScript = script
+  target.appendChild(script)
+}
+
+onMounted(() => {
+  // Initial page load is explicit. This avoids the old immediate watcher
+  // competing with component/router initialization.
+  loadAd()
+})
+
+watch(
+  () => route.fullPath,
+  (newPath, oldPath) => {
+    if (newPath === oldPath || newPath === lastLoadedRoute) return
+
+    if (timer) clearTimeout(timer)
+    timer = setTimeout(() => {
+      timer = null
+      loadAd()
+    }, 0)
+  }
+)
+
+onBeforeUnmount(() => {
+  ++loadToken
   if (timer) clearTimeout(timer)
   timer = null
   stopObserver()
-  adMount.value?.replaceChildren()
-  document.querySelectorAll('script[data-yyxvt-ad="1"]').forEach(el => el.remove())
-  document.querySelectorAll('[data-yyxvt-ad-node="1"]').forEach(el => el.remove())
-  adNodes.forEach(node => node?.parentNode?.removeChild(node))
-  adNodes.clear()
-}
-
-async function loadAd() {
-  await nextTick()
-  const target = adMount.value
-  if (!target) return
-  clearAd()
-  const currentGeneration = generation
-  startObserver()
-  const script = document.createElement('script')
-  script.dataset.yyxvtAd = '1'
-  script.async = false
-  script.src = `${AD_URL}?_route=${encodeURIComponent(route.fullPath)}&_=${Date.now()}`
-  target.appendChild(script)
-  script.onerror = () => {
-    if (currentGeneration === generation) console.warn('[AdContainer] advertisement failed to load')
-  }
-}
-
-function reloadPageResources() {
-  if (timer) clearTimeout(timer)
-  timer = setTimeout(() => {
-    timer = null
-    loadAd()
-  }, 0)
-}
-
-watch(() => route.fullPath, reloadPageResources, { immediate: true })
-onBeforeUnmount(() => {
-  clearAd()
+  clearPreviousAd()
+  lastLoadedRoute = null
 })
 </script>
 
