@@ -27,15 +27,20 @@ function trackPage() {
 }
 
 function loadStatistics() {
-  // Singleton guard. This also protects against HMR or an accidental second
-  // App mount inserting another copy of tj.js.
-  if (window.__yyxvtHistatsLoaderStarted) return
+  if (window.__yyxvtHistatsLoaderStarted || window.__yyxvtHistatsReadyState) {
+    return
+  }
+
+  window.__yyxvtHistatsLoaderStarted = true
 
   statsScript = document.createElement('script')
   statsScript.src = '/tj.js'
   statsScript.async = true
   statsScript.dataset.siteTj = '1'
-  statsScript.onerror = () => console.warn('[Statistics] tj.js 加载失败')
+  statsScript.onerror = () => {
+    console.warn('[Statistics] tj.js 加载失败')
+    window.__yyxvtHistatsLoaderStarted = false
+  }
   document.head.appendChild(statsScript)
 }
 
@@ -48,8 +53,6 @@ onMounted(() => {
   window.addEventListener('histats-ready', readyHandler, { once: true })
   loadStatistics()
 
-  // Handles the case where tj.js has already finished before the listener was
-  // attached (for example after a client-side HMR update).
   if (window.__yyxvtHistatsReadyState) {
     nextTick(() => trackPage())
   }
@@ -63,7 +66,6 @@ watch(
     window.scrollTo({ top: 0, behavior: 'smooth' })
     await nextTick()
 
-    // Do not count a navigation until Histats has actually initialized.
     if (window.__yyxvtHistatsReadyState) {
       trackPage()
     }
