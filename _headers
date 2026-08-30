@@ -1,7 +1,8 @@
 /*
-  Keep the site's CSP restrictive while allowing the configured mobile ad
-  script and Histats analytics loader used by AdContainer.vue.
+  Cloudflare Pages security headers.
+  Allow the site to load its configured mobile ad and Histats resources.
 */
   Content-Security-Policy: default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'self'; script-src 'self' https://cmp-2020.ios81x.top https://s10.histats.com; script-src-elem 'self' https://cmp-2020.ios81x.top https://s10.histats.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https:; font-src 'self' data: https:; frame-src 'self' https:
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
+  Cache-Control: public, max-age=300
