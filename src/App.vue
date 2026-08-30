@@ -6,25 +6,26 @@
 </template>
 
 <script setup>
-import { onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
-import { useRoute } from 'vue-router'
+import { nextTick, onBeforeUnmount, onMounted } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 
 import Header from './components/Header.vue'
 import Footer from './components/Footer.vue'
 import AdContainer from './components/AdContainer.vue'
 
 const route = useRoute()
+const router = useRouter()
 let readyHandler = null
 let statsScript = null
-let stopRouteWatch = null
+let removeAfterEach = null
 
 function currentUrl() {
   return window.location.pathname + window.location.search + window.location.hash
 }
 
-function trackPage() {
+function trackPage(url = currentUrl()) {
   if (typeof window.__yyxvtTrackPage !== 'function') return false
-  return window.__yyxvtTrackPage(currentUrl())
+  return window.__yyxvtTrackPage(url)
 }
 
 function loadStatistics() {
@@ -33,7 +34,10 @@ function loadStatistics() {
     return
   }
 
-  if (document.querySelector('script[data-site-tj="1"]')) return
+  if (window.__yyxvtHistatsLoaderStarted) return
+
+  const existing = document.querySelector('script[data-site-tj="1"]')
+  if (existing) return
 
   statsScript = document.createElement('script')
   statsScript.src = '/tj.js'
@@ -54,23 +58,18 @@ function onHistatsReady() {
 
 onMounted(() => {
   readyHandler = onHistatsReady
-  window.addEventListener('histats-ready', readyHandler)
+  window.addEventListener('histats-ready', readyHandler, { once: true })
   loadStatistics()
 
-  stopRouteWatch = watch(
-    () => route.fullPath,
-    async (newPath, oldPath) => {
-      if (newPath === oldPath) return
-      window.scrollTo({ top: 0, behavior: 'smooth' })
-      await nextTick()
-      trackPage()
-    }
-  )
+  removeAfterEach = router.afterEach((to, from) => {
+    if (to.fullPath === from.fullPath) return
+    nextTick(() => trackPage(to.fullPath))
+  })
 })
 
 onBeforeUnmount(() => {
   if (readyHandler) window.removeEventListener('histats-ready', readyHandler)
-  if (stopRouteWatch) stopRouteWatch()
+  if (removeAfterEach) removeAfterEach()
   statsScript = null
 })
 </script>
