@@ -11,30 +11,27 @@ const adMount = ref(null)
 const AD_URL = 'https://cmp-2020.ios81x.top/dh.php'
 const AD_SCRIPT_ID = 'yyxvt-mobile-ad-script'
 
-let adScript = null
+// The ad is a page-level resource, not a route-level resource. Keep one
+// loader state on window so remounts/HMR cannot create another dh.php request.
 let observer = null
 
 function startObserver() {
-  if (typeof MutationObserver === 'undefined') return
-  if (observer) return
+  if (typeof MutationObserver === 'undefined' || observer) return
+  observer = new MutationObserver(() => {})
+  // Intentionally observe nothing outside the ad mount. The old implementation
+  // watched the whole document but never removed anything, adding overhead and
+  // making third-party DOM changes look like ad activity.
+  observer.observe(adMount.value, { childList: true })
+}
 
-  observer = new MutationObserver((mutations) => {
-    mutations.forEach((mutation) => {
-      mutation.addedNodes.forEach((node) => {
-        if (!(node instanceof Element)) return
-        if (adMount.value && adMount.value.contains(node)) return
-        // Do not delete unrelated page nodes; only mark nodes produced by the ad loader.
-        if (node.id === AD_SCRIPT_ID || node.closest?.(`#${AD_SCRIPT_ID}`)) return
-      })
-    })
-  })
-
-  observer.observe(document.head, { childList: true })
-  observer.observe(document.body, { childList: true })
+function stopObserver() {
+  observer?.disconnect()
+  observer = null
 }
 
 function loadAdOnce() {
-  if (!adMount.value) return
+  const target = adMount.value
+  if (!target) return
 
   const existing = document.getElementById(AD_SCRIPT_ID)
   if (existing || window.__yyxvtAdLoaded || window.__yyxvtAdLoading) return
@@ -58,8 +55,7 @@ function loadAdOnce() {
     console.warn('[AdContainer] advertisement failed to load')
   }
 
-  adScript = script
-  adMount.value.appendChild(script)
+  target.appendChild(script)
 }
 
 onMounted(() => {
@@ -67,13 +63,9 @@ onMounted(() => {
   loadAdOnce()
 })
 
+// No route watcher: navigating inside the SPA must never reload dh.php.
 onBeforeUnmount(() => {
-  if (observer) {
-    observer.disconnect()
-    observer = null
-  }
-  // Deliberately keep the ad script alive during SPA route changes.
-  adScript = null
+  stopObserver()
 })
 </script>
 
