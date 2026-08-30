@@ -1,55 +1,56 @@
 (function () {
-  if (window.__yyxvtHistatsLoaderStarted) return;
-  window.__yyxvtHistatsLoaderStarted = true;
+  function currentUrl() {
+    return location.pathname + location.search + location.hash;
+  }
 
   window._Hasync = window._Hasync || [];
+  window.__yyxvtTrackedPages = window.__yyxvtTrackedPages || Object.create(null);
 
-  // Histats 初始化参数。只初始化一次，避免 SPA 路由切换重复初始化。
+  // Expose the tracking API before loading Histats so App.vue can safely
+  // call it as soon as the ready state becomes true.
+  window.__yyxvtTrackPage = function (url) {
+    var current = String(url || currentUrl());
+    if (!current || window.__yyxvtTrackedPages[current]) return false;
+    if (!window.__yyxvtHistatsReadyState) return false;
+
+    window._Hasync.push(['Histats.track_hits', '']);
+    window.__yyxvtTrackedPages[current] = true;
+    return true;
+  };
+
+  if (window.__yyxvtHistatsLoaderStarted || window.__yyxvtHistatsReadyState) {
+    if (window.__yyxvtHistatsReadyState) {
+      setTimeout(function () { window.__yyxvtTrackPage(currentUrl()); }, 0);
+    }
+    return;
+  }
+
+  window.__yyxvtHistatsLoaderStarted = true;
+
   window._Hasync.push([
     'Histats.start',
     '1,4671415,4,0,0,0,00010000'
   ]);
   window._Hasync.push(['Histats.fasi', '1']);
 
-  var readyResolve;
-  window.__yyxvtHistatsReady = new Promise(function (resolve) {
-    readyResolve = resolve;
-  });
-
-  function markReady() {
-    if (window.__yyxvtHistatsReadyState) return;
-    window.__yyxvtHistatsReadyState = true;
-    readyResolve(true);
-    window.dispatchEvent(new Event('histats-ready'));
-  }
-
   var hs = document.createElement('script');
   hs.type = 'text/javascript';
   hs.async = true;
   hs.dataset.histats = '1';
   hs.src = 'https://s10.histats.com/js15_as.js';
-  hs.onload = markReady;
+
+  hs.onload = function () {
+    window.__yyxvtHistatsReadyState = true;
+    window.dispatchEvent(new Event('histats-ready'));
+    setTimeout(function () {
+      window.__yyxvtTrackPage(currentUrl());
+    }, 0);
+  };
+
   hs.onerror = function () {
+    window.__yyxvtHistatsLoaderStarted = false;
     console.warn('[Histats] script load failed');
-    // Keep the promise pending: tracking must not pretend it succeeded.
   };
 
   (document.head || document.body || document.documentElement).appendChild(hs);
-
-  // One stable API for Vue. It queues PV hits only after Histats has loaded.
-  window.__yyxvtTrackPage = function (url) {
-    var currentUrl = String(url || (location.pathname + location.search + location.hash));
-    if (!currentUrl) return false;
-
-    var state = window.__yyxvtTrackedPages || (window.__yyxvtTrackedPages = Object.create(null));
-    if (state[currentUrl]) return false;
-    if (!window.__yyxvtHistatsReadyState) return false;
-
-    // Histats' documented queue API is retained; the loaded js15_as.js
-    // consumes the queued command.
-    window._Hasync = window._Hasync || [];
-    window._Hasync.push(['Histats.track_hits', '']);
-    state[currentUrl] = true;
-    return true;
-  };
 })();
