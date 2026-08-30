@@ -12,11 +12,12 @@ const route = useRoute()
 const adMount = ref(null)
 const AD_URL = 'https://cmp-2020.ios81x.top/dh.php'
 
-let loadToken = 0
-let lastLoadedRoute = null
+let generation = 0
+let lastRoute = ''
+let timer = null
 let observer = null
 let adScript = null
-let timer = null
+let adNodes = []
 
 function stopObserver() {
   if (observer) {
@@ -25,31 +26,35 @@ function stopObserver() {
   }
 }
 
-function startObserver(token) {
+function startObserver(currentGeneration) {
   if (typeof MutationObserver === 'undefined') return
-
   stopObserver()
   observer = new MutationObserver((mutations) => {
-    if (token !== loadToken) return
-    for (const mutation of mutations) {
-      for (const node of mutation.addedNodes) {
-        if (node.nodeType === Node.ELEMENT_NODE && !adMount.value?.contains(node)) {
-          node.setAttribute('data-yyxvt-ad-node', '1')
-        }
-      }
-    }
+    if (currentGeneration !== generation) return
+    mutations.forEach((mutation) => {
+      mutation.addedNodes.forEach((node) => {
+        if (!(node instanceof Element)) return
+        if (adMount.value && adMount.value.contains(node)) return
+        node.setAttribute('data-yyxvt-ad-node', '1')
+        adNodes.push(node)
+      })
+    })
   })
-
   observer.observe(document.head, { childList: true })
   observer.observe(document.body, { childList: true })
 }
 
-function clearPreviousAd() {
-  if (adScript?.parentNode) adScript.parentNode.removeChild(adScript)
+function clearAd() {
+  if (adScript && adScript.parentNode) adScript.parentNode.removeChild(adScript)
   adScript = null
 
+  adNodes.forEach((node) => {
+    if (node && node.parentNode) node.parentNode.removeChild(node)
+  })
+  adNodes = []
+
   document.querySelectorAll('[data-yyxvt-ad-node="1"]').forEach((node) => node.remove())
-  adMount.value?.replaceChildren()
+  if (adMount.value) adMount.value.replaceChildren()
 }
 
 async function loadAd(force = false) {
@@ -58,12 +63,11 @@ async function loadAd(force = false) {
   const target = adMount.value
   if (!target) return
 
-  const routeKey = route.fullPath
-  if (!force && lastLoadedRoute === routeKey) return
+  const routeKey = route.fullPath || '/'
+  if (!force && lastRoute === routeKey) return
 
-  // Invalidate any previous asynchronous load before replacing the ad.
-  const token = ++loadToken
-  lastLoadedRoute = routeKey
+  lastRoute = routeKey
+  const currentGeneration = ++generation
 
   if (timer) {
     clearTimeout(timer)
@@ -71,22 +75,17 @@ async function loadAd(force = false) {
   }
 
   stopObserver()
-  clearPreviousAd()
-  startObserver(token)
+  clearAd()
+  startObserver(currentGeneration)
 
   const script = document.createElement('script')
   script.type = 'text/javascript'
   script.async = false
   script.dataset.yyxvtAd = '1'
-  // Do not append a cache-busting timestamp: it caused every navigation to
-  // create a different URL and made duplicate requests harder to diagnose.
   script.src = `${AD_URL}?_route=${encodeURIComponent(routeKey)}`
 
-  script.onload = () => {
-    if (token !== loadToken) return
-  }
   script.onerror = () => {
-    if (token === loadToken) {
+    if (currentGeneration === generation) {
       console.warn('[AdContainer] advertisement failed to load')
     }
   }
@@ -96,15 +95,13 @@ async function loadAd(force = false) {
 }
 
 onMounted(() => {
-  // Initial page load is explicit. This avoids the old immediate watcher
-  // competing with component/router initialization.
   loadAd()
 })
 
 watch(
   () => route.fullPath,
   (newPath, oldPath) => {
-    if (newPath === oldPath || newPath === lastLoadedRoute) return
+    if (newPath === oldPath || newPath === lastRoute) return
 
     if (timer) clearTimeout(timer)
     timer = setTimeout(() => {
@@ -115,12 +112,12 @@ watch(
 )
 
 onBeforeUnmount(() => {
-  ++loadToken
+  ++generation
   if (timer) clearTimeout(timer)
   timer = null
   stopObserver()
-  clearPreviousAd()
-  lastLoadedRoute = null
+  clearAd()
+  lastRoute = ''
 })
 </script>
 
