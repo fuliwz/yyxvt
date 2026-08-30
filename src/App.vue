@@ -1,19 +1,22 @@
 <template>
   <Header />
-  <AdContainer />
-  <router-view />
-  <Footer />
+  <div class="layout">
+    <main class="content">
+      <AdContainer />
+      <router-view />
+      <Footer />
+    </main>
+  </div>
 </template>
 
 <script setup>
 import { nextTick, onBeforeUnmount, onMounted } from 'vue'
-import { useRoute, useRouter } from 'vue-router'
+import { useRouter } from 'vue-router'
 
 import Header from './components/Header.vue'
 import Footer from './components/Footer.vue'
 import AdContainer from './components/AdContainer.vue'
 
-const route = useRoute()
 const router = useRouter()
 let readyHandler = null
 let statsScript = null
@@ -33,9 +36,7 @@ function loadStatistics() {
     nextTick(() => trackPage())
     return
   }
-
   if (window.__yyxvtHistatsLoaderStarted) return
-
   const existing = document.querySelector('script[data-site-tj="1"]')
   if (existing) return
 
@@ -47,7 +48,6 @@ function loadStatistics() {
     window.__yyxvtHistatsLoaderStarted = false
     console.warn('[Statistics] tj.js 加载失败')
   }
-
   window.__yyxvtHistatsLoaderStarted = true
   document.head.appendChild(statsScript)
 }
@@ -60,7 +60,6 @@ onMounted(() => {
   readyHandler = onHistatsReady
   window.addEventListener('histats-ready', readyHandler, { once: true })
   loadStatistics()
-
   removeAfterEach = router.afterEach((to, from) => {
     if (to.fullPath === from.fullPath) return
     nextTick(() => trackPage(to.fullPath))
@@ -73,3 +72,9 @@ onBeforeUnmount(() => {
   statsScript = null
 })
 </script>
+
+<style scoped>
+.layout{display:flex;min-height:calc(100vh - 62px)}
+.content{flex:1;min-width:0;padding:26px 18px 54px;max-width:1660px;margin:0 auto}
+@media(max-width:900px){.content{padding:20px 12px 38px}}
+</style>
