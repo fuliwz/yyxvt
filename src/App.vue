@@ -16,6 +16,7 @@ import AdContainer from './components/AdContainer.vue'
 const route = useRoute()
 let readyHandler = null
 let statsScript = null
+let routeWatchStop = null
 
 function currentUrl() {
   return window.location.pathname + window.location.search + window.location.hash
@@ -27,20 +28,21 @@ function trackPage() {
 }
 
 function loadStatistics() {
-  if (window.__yyxvtHistatsLoaderStarted || window.__yyxvtHistatsReadyState) {
-    return
-  }
-
-  window.__yyxvtHistatsLoaderStarted = true
+  const existing = document.querySelector('script[data-site-tj="1"]')
+  if (existing || window.__yyxvtHistatsReadyState || window.__yyxvtHistatsLoaderStarted) return
 
   statsScript = document.createElement('script')
   statsScript.src = '/tj.js'
   statsScript.async = true
   statsScript.dataset.siteTj = '1'
-  statsScript.onerror = () => {
-    console.warn('[Statistics] tj.js 加载失败')
-    window.__yyxvtHistatsLoaderStarted = false
+  statsScript.onload = () => {
+    if (window.__yyxvtHistatsReadyState) trackPage()
   }
+  statsScript.onerror = () => {
+    window.__yyxvtHistatsLoaderStarted = false
+    console.warn('[Statistics] tj.js 加载失败')
+  }
+  window.__yyxvtHistatsLoaderStarted = true
   document.head.appendChild(statsScript)
 }
 
@@ -50,32 +52,27 @@ function onHistatsReady() {
 
 onMounted(() => {
   readyHandler = onHistatsReady
-  window.addEventListener('histats-ready', readyHandler, { once: true })
+  window.addEventListener('histats-ready', readyHandler)
   loadStatistics()
 
   if (window.__yyxvtHistatsReadyState) {
     nextTick(() => trackPage())
   }
-})
 
-watch(
-  () => route.fullPath,
-  async (newPath, oldPath) => {
-    if (newPath === oldPath) return
-
-    window.scrollTo({ top: 0, behavior: 'smooth' })
-    await nextTick()
-
-    if (window.__yyxvtHistatsReadyState) {
+  routeWatchStop = watch(
+    () => route.fullPath,
+    async (newPath, oldPath) => {
+      if (newPath === oldPath) return
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+      await nextTick()
       trackPage()
     }
-  }
-)
+  )
+})
 
 onBeforeUnmount(() => {
-  if (readyHandler) {
-    window.removeEventListener('histats-ready', readyHandler)
-  }
+  if (readyHandler) window.removeEventListener('histats-ready', readyHandler)
+  if (routeWatchStop) routeWatchStop()
   statsScript = null
 })
 </script>
